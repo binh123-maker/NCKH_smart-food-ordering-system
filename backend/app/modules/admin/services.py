@@ -123,7 +123,9 @@ class AdminService:
                 "algorithm_type": active_model.algorithm_type,
                 "precision_at_k": float(active_model.precision_at_k),
                 "recall_at_k": float(active_model.recall_at_k),
+                "f1_at_k": float(active_model.f1_at_k),
                 "ndcg_at_k": float(active_model.ndcg_at_k),
+                "map_at_k": float(active_model.map_at_k),
                 "coverage_rate": float(active_model.coverage_rate),
                 "trained_at": active_model.trained_at,
             }
@@ -132,6 +134,6 @@ class AdminService:
             "active_model": model_info,
             "total_interactions_collected": total_interactions,
             "total_serving_logs": total_recommendations,
-            "pipeline_status": "READY_FOR_PHASE_7_TRAINING",
+            "pipeline_status": "ONLINE_ACTIVE_SERVING",
         }
 

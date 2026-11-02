@@ -10,32 +10,30 @@ import { useCartStore } from "../stores/cartStore";
 import { useAuthStore } from "../stores/authStore";
 import { recommendationService } from "../services/recommendationService";
 import { FoodRecommendationItem } from "../types";
-import { MOCK_RECOMMENDATIONS } from "../data/mockData";
+import { EmptyState } from "../components/ui/EmptyState";
 
 export const RecommendationPage: React.FC = () => {
   const { user } = useAuthStore();
   const { addItem } = useCartStore();
 
   const [recommendations, setRecommendations] = useState<FoodRecommendationItem[]>([]);
-  const [modelVersion, setModelVersion] = useState<string>("v1.0.4-hybrid");
+  const [modelVersion, setModelVersion] = useState<string>("v2.0.0-scientific-hybrid");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filterGoal, setFilterGoal] = useState<"ALL" | "PROTEIN" | "LOW_CALO" | "VEGAN">("ALL");
-  const [maxCaloFilter, setMaxCaloFilter] = useState<number>(800);
+  const [maxCaloFilter, setMaxCaloFilter] = useState<number>(850);
 
   useEffect(() => {
     setIsLoading(true);
     recommendationService
-      .getHomeFeedRecommendations(12)
+      .getHomeFeedRecommendations({ limit: 16 })
       .then((res) => {
-        if (res && res.items && res.items.length > 0) {
+        if (res && res.items) {
           setRecommendations(res.items);
           if (res.model_version) setModelVersion(res.model_version);
-        } else {
-          setRecommendations(MOCK_RECOMMENDATIONS);
         }
       })
-      .catch(() => {
-        setRecommendations(MOCK_RECOMMENDATIONS);
+      .catch((err) => {
+        console.error("Failed to load recommendations:", err);
       })
       .finally(() => {
         setIsLoading(false);
@@ -152,6 +150,16 @@ export const RecommendationPage: React.FC = () => {
           <div className="py-20 flex justify-center">
             <LoadingSpinner size="lg" text="Hệ thống AI đang tính toán vector gợi ý cá nhân..." />
           </div>
+        ) : filteredRecs.length === 0 ? (
+          <EmptyState
+            title="Không có món ăn phù hợp với bộ lọc"
+            description="Hãy thử nới lỏng mức calo tối đa hoặc chọn mục tiêu dinh dưỡng khác để xem thêm gợi ý."
+            actionLabel="Đặt lại bộ lọc"
+            onAction={() => {
+              setFilterGoal("ALL");
+              setMaxCaloFilter(850);
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRecs.map((item) => (

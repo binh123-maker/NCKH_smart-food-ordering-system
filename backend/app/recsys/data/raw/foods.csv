@@ -1,0 +1,61 @@
+id,name,category_id,price,calories,protein,fat,carbohydrates,dietary_tags,ingredients,rating_average,order_count
+food_001,Cơm tấm sườn bì chả,COM,55000,680,32,24,85,"traditional,vietnamese,pork","gạo tấm, sườn heo nướng, bì heo, chả trứng, nước mắm tỏi ớt, mỡ hành",4.6,55
+food_002,Cơm gà xối mỡ giòn,COM,50000,720,35,30,78,"crispy,chicken,comfort","cơm đỏ gà, đùi gà chiên giòn, dưa leo, cà chua, nước tương ớt",4.7,280
+food_003,Cơm cá hồi sốt Teriyaki,COM,95000,540,38,18,56,"healthy,high_protein,omega3,japanese","cá hồi phi lê, sốt teriyaki, cơm trắng, súp lơ xanh, mè rang",4.2,784
+food_004,Cơm bò lúc lắc khoai tây,COM,75000,640,36,22,72,"beef,comfort,high_protein","thịt bò thăn úc, ớt chuông, hành tây, cơm tỏi, bơ nhạt",4.1,788
+food_005,Cơm rang dưa bò,COM,45000,610,25,20,82,"traditional,street_food,budget","cơm nguội rang giòn, thịt bò xào, dưa cải chua, tỏi phi",4.8,119
+food_006,Cơm sườn nướng mật ong,COM,60000,650,30,22,80,"pork,bbq,comfort","sườn non, mật ong rừng, sả ớt, cơm tấm, rau xà lách",4.5,62
+food_007,Cơm gạo lứt ức gà áp chảo,COM,65000,420,42,8,48,"fitness,diet,high_protein,healthy,low_fat","gạo lứt huyết rồng, ức gà phi lê, dầu oliu, măng tây, tiêu đen",4.0,253
+food_008,Cơm thịt kho tàu trứng cút,COM,45000,670,26,32,70,"traditional,home_cooking,comfort","thịt ba chỉ, trứng cút, nước dừa tươi, cơm trắng, hành lá",4.2,646
+food_009,Cơm chiên hải sản kim chi,COM,60000,590,28,18,78,"seafood,spicy,korean_fusion","tôm sú, mực tươi, kim chi cải thảo, cơm rang, rong biển khô",4.0,233
+food_010,Cơm chay nấm hạt sen,COM,45000,380,16,8,62,"vegetarian,vegan,healthy,plant_based","nấm hương tươi, hạt sen Huế, đậu hũ chiên, gạo thơm, cà rốt",4.6,748
+food_011,Phở bò tái lăn Hà Nội,PHO_BUN,60000,520,32,16,62,"traditional,soup,vietnamese,beef","bánh phở tươi, thăn bò xào tỏi gừng, nước dùng xương bò hầm 12h, hành lá",4.5,255
+food_012,Phở gà ta lá chanh,PHO_BUN,55000,460,30,12,58,"traditional,chicken,low_fat,vietnamese","thịt đùi gà ta xé, bánh phở, lá chanh non, nước hầm gà ngọt thanh",4.4,314
+food_013,Bún chả Hà Nội nướng than hoa,PHO_BUN,55000,580,28,24,64,"traditional,pork,vietnamese","chả miếng thịt ba chỉ nướng than hoa, bún tươi, nước mắm đu đủ chua ngọt, rau sống",4.7,36
+food_014,Bún bò Huế đặc biệt,PHO_BUN,65000,620,34,22,70,"spicy,traditional,beef,soup","bắp bò, giò heo, chả cua Huế, huyết, sả ruốc ớt cay, bún sợi to",4.7,193
+food_015,Bún riêu cua bắp bò sườn sụn,PHO_BUN,60000,550,30,18,66,"traditional,seafood,soup","riêu cua đồng tươi, cà chua, sườn sụn giòn, bắp bò tái, đậu phụ rán, rau muống chẻ",4.6,378
+food_016,Bún đậu mắm tôm thập cẩm,PHO_BUN,65000,710,35,34,68,"traditional,street_food,comfort","bún lá, đậu mơ rán giòn, chả cốm nướng, nem rán, thịt luộc, mắm tôm đánh chanh sủi bọt",4.3,250
+food_017,Mì Quảng tôm thịt đậm đà,PHO_BUN,50000,510,27,16,64,"traditional,central_vietnam,comfort","sợi mì quảng nghệ, tôm ram mặn, thịt ba chỉ, trứng cút, bánh đa mè nướng, đậu phộng",4.9,374
+food_018,Bánh canh cua biển đặc biệt,PHO_BUN,75000,530,32,15,65,"seafood,soup,rich","sợi bánh canh bột lọc dẻo, thịt cua biển bóc nõn, chả cá thát lát, nước dùng sền sệt",4.1,419
+food_019,Hủ tiếu Nam Vang thập cẩm,PHO_BUN,60000,490,28,14,62,"southern_vietnam,noodle_soup,pork","hủ tiếu dai dai, tôm sú, thịt nạc dăm, tim heo, cật heo, tỏi phi thơm, giá đỗ",4.1,382
+food_020,Phở cuốn thịt bò rau thơm,PHO_BUN,55000,410,26,10,52,"healthy,fresh,low_calorie,vietnamese","bánh phở bản to cuốn bắp bò xào tỏi, rau húng quế, xà lách, chấm mắm tỏi ớt",4.5,74
+food_021,Salad ức gà áp chảo sốt mè rang,HEALTHY_SALAD,65000,360,38,11,24,"fitness,diet,high_protein,healthy,low_carb","ức gà nướng áp chảo, xà lách romaine, cà chua bi, ngô ngọt, sốt mè rang Kewpie",4.7,579
+food_022,Salad cá hồi quả bơ sốt chanh leo,HEALTHY_SALAD,89000,430,32,22,26,"healthy,high_protein,omega3,keto,low_carb","cá hồi hun khói Na Uy, bơ sáp Đắk Lắk thái lát, rau rocket, sốt chanh leo mật ong",4.1,417
+food_023,Bát Poke hải sản rong biển sốt Ponzu,HEALTHY_SALAD,95000,480,35,14,52,"healthy,hawaiian,high_protein,fresh","tôm luộc, cá ngừ đại dương tươi, rong biển wakame, đậu nành edamame, sốt ponzu",4.1,330
+food_024,Salad bơ trứng luộc sốt sữa chua Hy Lạp,HEALTHY_SALAD,55000,320,18,16,22,"vegetarian,healthy,diet,low_carb","trứng gà lòng đào, quả bơ sáp, xà lách xoăn, sốt greek yogurt thì là",4.7,663
+food_025,Salad rau củ ngũ sắc hạt chia,HEALTHY_SALAD,45000,220,8,6,34,"vegan,vegetarian,diet,low_calorie,fiber","bắp cải tím, cà rốt bào sợi, dưa leo baby, hạt chia hữu cơ, sốt giấm táo oliu",4.8,400
+food_026,Ức gà hấp rau củ sốt gừng hành,HEALTHY_SALAD,59000,340,40,6,28,"fitness,diet,high_protein,low_fat","ức gà ta hấp mềm, bí ngòi, cà rốt baby, sốt gừng hành tươi, tiêu sọ",4.5,751
+food_027,Cháo yến mạch tôm bằm nấm tuyết,HEALTHY_SALAD,50000,310,24,5,42,"healthy,low_fat,diet,comfort","yến mạch nguyên cám, tôm nõn băm nhỏ, nấm tuyết giòn, hành hoa, tiêu đen",4.1,707
+food_028,Bò áp chảo măng tây sốt tiêu đen,HEALTHY_SALAD,95000,450,44,16,22,"fitness,high_protein,beef,low_carb","thịt bò thăn lưng áp chảo vừa chín tới, măng tây xanh giòn, nấm đùi gà, sốt tiêu đen",4.2,326
+food_029,Salad đậu gà sốt bơ mè hạt dẻ,HEALTHY_SALAD,50000,350,16,12,46,"vegan,vegetarian,fiber,plant_based","đậu gà luộc mềm, ớt chuông nướng, rau mầm, hạt dẻ cười đập dập, sốt bơ mè tahini",4.9,268
+food_030,Gỏi cuốn tôm thịt thanh mát,HEALTHY_SALAD,45000,280,20,6,38,"healthy,low_calorie,vietnamese,fresh","bánh tráng gạo, tôm luộc, nạc heo luộc, hẹ tươi, bún gạo, xà lách, chấm tương đen đậu phộng",4.8,419
+food_031,Burger bò phô mai đôi xông khói,FASTFOOD,69000,760,38,42,56,"fast_food,beef,cheese,comfort","bánh mì burger nướng bơ, 2 miếng thịt bò xay đập dẹp, 2 lát cheddar vàng, thịt xông khói giòn",4.3,680
+food_032,Gà rán giòn cay sốt tương tỏi,FASTFOOD,55000,680,34,36,52,"fast_food,chicken,crispy,spicy","cánh và đùi gà tẩm bột chiên vàng rụm, lắc đều sốt tương tỏi cay đậm đà Hàn Quốc",4.8,196
+food_033,Pizza phô mai xúc xích Pepperoni,FASTFOOD,89000,820,30,38,88,"fast_food,pizza,cheese,comfort","đế bánh pizza viền phô mai giòn xốp, sốt cà chua thảo mộc, xúc xích pepperoni cay, mozzarella kéo sợi",4.3,244
+food_034,Khoai tây chiên giòn lắc phô mai,FASTFOOD,35000,460,6,24,54,"fast_food,snack,budget","khoai tây cắt sợi chiên ngập dầu giòn tan, phủ bột phô mai béo mặn ngọt",4.6,748
+food_035,Bánh mì thập cẩm pate bơ thịt nguội,FASTFOOD,30000,480,20,18,58,"fast_food,budget,traditional,street_food","bánh mì giòn rụm, pate gan heo nhà làm, chả lụa, thịt nguội, dưa leo, ngò rí, ớt cay",4.8,693
+food_036,Sandwich cá ngừ nướng phô mai tan chảy,FASTFOOD,45000,490,26,18,52,"fast_food,fish,cheese,budget","bánh mì sandwich nguyên cám nướng vàng, cá ngừ ngâm dầu sốt mayonnaise, phô mai cheddar",4.1,680
+food_037,Mì Ý spaghetti sốt bò bằm cà chua,FASTFOOD,60000,620,28,20,80,"pasta,italian,beef,comfort","mì spaghetti luộc chín tới, sốt thịt bò bằm đậm đà cà chua Ý, rắc phô mai parmesan thơm lừng",4.2,776
+food_038,Taco bò băm cay giòn rụm kiểu Mexico,FASTFOOD,55000,460,24,22,42,"fast_food,mexican,spicy,beef","vỏ bánh taco ngô giòn tan, thịt bò băm xào ớt bột cumin, sốt salsa chua cay, kem chua sour cream",4.2,503
+food_039,Gà viên lắc sốt mật ong mù tạt,FASTFOOD,42000,510,26,24,46,"fast_food,chicken,snack,crispy","thịt ức gà cắt quân cờ tẩm bột xù chiên vàng, lắc sốt mật ong mù tạt vàng béo ngậy",4.3,685
+food_040,Bánh mì que cay Hải Phòng đặc sản,FASTFOOD,25000,320,10,14,38,"fast_food,budget,street_food,traditional","bánh mì que thon dài nướng giòn thơm phức, kẹp pate gan ngậy béo, rưới chí chương ớt đỏ cay nồng",4.6,254
+food_041,Trà đào cam sả hạt chia tươi mát,DOUONG,38000,130,1,0,32,"drink,tea,fresh,low_fat","trà olong ủ lạnh, miếng đào giòn ngâm đường, cam vàng thái lát, sả tươi đập dập, hạt chia",4.6,816
+food_042,Trà sữa trân châu đường đen trứ danh,DOUONG,45000,380,4,12,65,"drink,sweet,tea,comfort","trà đen đậm vị, sữa tươi thanh trùng DalatMilk, trân châu đen dẻo quánh sốt đường đen Đài Loan",4.7,264
+food_043,Cà phê sữa đá Sài Gòn đậm đặc,DOUONG,28000,160,3,4,28,"drink,coffee,traditional,energy","cà phê robusta Buôn Ma Thuột pha phin truyền thống, sữa đặc Ngôi Sao Phương Nam, đá viên sạch",4.7,353
+food_044,Nước ép cần tây dưa hấu thanh lọc cơ thể,DOUONG,40000,85,2,0,20,"drink,diet,healthy,detox,low_calorie,vegan","cần tây tươi ép chậm cùng dưa hấu đỏ mọng nước và một chút cốt chanh tươi, không thêm đường",4.4,97
+food_045,Sinh tố bơ sáp dừa non béo ngậy,DOUONG,48000,360,5,20,42,"drink,fruit,healthy_fat,smoothie","bơ sáp Đắk Lắk xay nhuyễn cùng cơm dừa non bùi béo, sữa tươi, sữa chua và một ít đá xay",4.2,610
+food_046,Trà xanh Matcha Latte kem Cheese béo,DOUONG,48000,290,6,10,44,"drink,tea,japanese,comfort","bột trà xanh matcha Uji Nhật Bản nguyên chất, sữa tươi nóng hoặc lạnh, phủ lớp kem mặn macchiato",4.8,352
+food_047,Nước cam tươi mọng nước vắt nguyên chất,DOUONG,35000,110,2,0,26,"drink,vitamin_c,healthy,vegan","cam sành miền Tây vắt tay lấy nước cốt tươi nguyên tép cam, chút mật ong rừng dịu nhẹ",4.2,541
+food_048,Nước dừa xiêm Bến Tre ngọt mát,DOUONG,32000,60,1,0,15,"drink,detox,natural,healthy,vegan,low_calorie","nước dừa xiêm xanh nguyên trái ngọt thanh tự nhiên giàu điện giải, kèm cơm dừa mềm nạo sợi",4.4,688
+food_049,Sinh tố chuối yến mạch bơ đậu phộng Protein,DOUONG,52000,410,28,12,48,"drink,fitness,high_protein,smoothie,energy","chuối tây tiêu chín, bột yến mạch cán dẹt, bột whey protein isolate, bơ đậu phộng không đường, sữa hạnh nhân",4.4,301
+food_050,Nước chanh leo tuyết mật ong bạc hà,DOUONG,30000,95,1,0,23,"drink,fresh,vitamin_c,budget","cốt chanh leo tươi chua thơm nồng nàn, mật ong hoa nhãn, lá bạc hà tươi vò dập, đá bào tuyết",4.1,792
+food_051,Chè bưởi An Giang cùi giòn cốt dừa,TRANGMIENG,30000,280,4,8,48,"dessert,sweet,traditional,vietnamese","cùi bưởi da xanh sơ chế kỹ khử đắng giòn sần sật, đậu xanh đồ chín tơi, nước cốt dừa béo ngậy",4.5,299
+food_052,Bánh flan caramel trứng sữa mềm mịn,TRANGMIENG,22000,190,6,7,26,"dessert,budget,sweet,comfort","trứng gà ta tươi, sữa đặc, sữa tươi không đường hấp cách thủy mềm mượt như lụa, lớp đường caramen đắng nhẹ",4.7,468
+food_053,Sữa chua Hy Lạp hạt Granola và dâu tây,TRANGMIENG,45000,220,14,5,30,"dessert,healthy,diet,fitness,high_protein","sữa chua Hy Lạp tự ủ đặc quánh giàu đạm, hạt ngũ cốc nướng mật ong granola giòn rụm, dâu tây Đà Lạt xắt hạt lựu",4.8,438
+food_054,Rau câu hoa quả tam sắc thanh mát,TRANGMIENG,25000,140,2,1,32,"dessert,low_calorie,budget,vegan","bột rau câu giòn agar, cốt dừa, nước ép thanh long đỏ và lá dứa xanh biếc tạo nên 3 tầng màu bắt mắt",4.3,171
+food_055,Bánh chuối nướng cốt dừa truyền thống,TRANGMIENG,30000,310,4,9,54,"dessert,traditional,sweet","chuối sứ chín mùi ướp rượu rum thoang thoảng, bánh mì nướng mềm cùng nước cốt dừa và sữa đặc béo ngậy",4.5,123
+food_056,Chè hạt sen long nhãn Hưng Yên,TRANGMIENG,35000,210,4,1,48,"dessert,traditional,healthy,cooling","hạt sen tươi nấu mềm bùi bọc trong từng múi long nhãn sấy dẻo ngọt thanh tao, nước đường phèn hoa bưởi",4.7,142
+food_057,Panna Cotta vị dâu tây sốt chua ngọt,TRANGMIENG,38000,240,4,14,26,"dessert,sweet,italian,comfort","kem sữa tươi whipping cream béo ngậy kết đông cùng gelatin tự nhiên, phủ lớp sốt mứt dâu tây chua dịu",4.1,193
+food_058,Kem dừa non Côn Đảo rắc đậu phộng,TRANGMIENG,40000,270,3,15,32,"dessert,coconut,ice_cream,comfort","viên kem dừa dẻo mịn đặt trong nửa trái dừa tươi, ăn kèm cơm dừa nạo mềm, đậu phộng rang giòn và sốt socola",4.7,462
+food_059,Bánh crepe sầu riêng ngập kem béo,TRANGMIENG,45000,350,5,18,42,"dessert,durian,rich,sweet",vỏ bánh crepe lá dứa mỏng dai cuộn đầy ắp múi sầu riêng Ri6 thơm nức mũi và kem sữa béo ngậy,4.5,424
+food_060,Tô trái cây tươi dầm sữa chua không đường,TRANGMIENG,35000,160,5,2,32,"dessert,healthy,fruit,diet,low_fat","dưa hấu, mít nghệ, xoài chín, thanh long trắng cắt quân cờ dầm cùng sữa chua men sống ít đường và đá bào",4.3,509

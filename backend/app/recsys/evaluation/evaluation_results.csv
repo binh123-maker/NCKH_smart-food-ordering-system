@@ -1,0 +1,5 @@
+Model,Evaluated_Users,Precision@5,Precision@10,Recall@5,F1@5,NDCG@5,MAP@5,Recall@10,F1@10,NDCG@10,MAP@10,Coverage@10
+Popularity Baseline,116,0.1224,0.0991,0.3135,0.1674,0.2245,0.1544,0.4394,0.1565,0.2821,0.181,0.3833
+Content-Based Filtering,116,0.1845,0.1405,0.3407,0.2323,0.3237,0.246,0.5348,0.2173,0.4039,0.2897,1.0
+Collaborative Filtering (SVD),116,0.2259,0.1716,0.4818,0.2924,0.44,0.3606,0.6948,0.2669,0.5321,0.413,1.0
+Hybrid RecSys (CBF + CF + Nutrition Re-ranking),116,0.2724,0.1871,0.5703,0.3534,0.5147,0.4171,0.7519,0.2914,0.5945,0.4683,1.0

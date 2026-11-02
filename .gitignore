@@ -1,4 +1,12 @@
 .env
 node_modules/
 venv/
+.venv/
 __pycache__/
+*.db
+.pytest_cache/
+dist/
+
+*.db
+.pytest_cache/
+dist/

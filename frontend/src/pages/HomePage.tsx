@@ -1,18 +1,49 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, ArrowRight, ShieldCheck, Flame, Heart, TrendingUp, Search } from "lucide-react";
-import { MOCK_CATEGORIES, MOCK_FOODS, MOCK_RECOMMENDATIONS, MOCK_RESTAURANTS } from "../data/mockData";
+import { Sparkles, ArrowRight, Flame, Search } from "lucide-react";
 import { FoodCard } from "../components/common/FoodCard";
 import { RestaurantCard } from "../components/common/RestaurantCard";
 import { MatchScoreIndicator } from "../components/ui/MatchScoreIndicator";
 import { Button } from "../components/ui/Button";
 import { formatVND } from "../lib/utils";
 import { useAuthStore } from "../stores/authStore";
+import { foodService } from "../services/foodService";
+import { restaurantService } from "../services/restaurantService";
+import { recommendationService } from "../services/recommendationService";
+import { Food, Restaurant, Category, FoodRecommendationItem } from "../types";
+import { MOCK_CATEGORIES, MOCK_FOODS, MOCK_RESTAURANTS, MOCK_RECOMMENDATIONS } from "../data/mockData";
 
 export const HomePage: React.FC = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
+
+  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [trendingFoods, setTrendingFoods] = useState<Food[]>(MOCK_FOODS);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(MOCK_RESTAURANTS);
+  const [recommendations, setRecommendations] = useState<FoodRecommendationItem[]>(MOCK_RECOMMENDATIONS);
+
+  useEffect(() => {
+    // 1. Fetch categories
+    foodService.getCategories().then((data) => {
+      if (data && data.length > 0) setCategories(data);
+    }).catch(() => {});
+
+    // 2. Fetch trending foods
+    foodService.getFoods({ limit: 4, sort_by: "popular" }).then((res) => {
+      if (res && res.items.length > 0) setTrendingFoods(res.items);
+    }).catch(() => {});
+
+    // 3. Fetch restaurants
+    restaurantService.getRestaurants({ limit: 4 }).then((res) => {
+      if (res && res.items.length > 0) setRestaurants(res.items);
+    }).catch(() => {});
+
+    // 4. Fetch recommendations
+    recommendationService.getHomeFeedRecommendations(3).then((res) => {
+      if (res && res.items && res.items.length > 0) setRecommendations(res.items);
+    }).catch(() => {});
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +51,8 @@ export const HomePage: React.FC = () => {
       navigate(`/search?q=${encodeURIComponent(keyword.trim())}`);
     }
   };
+
+  const heroFeatured = recommendations[0] || MOCK_RECOMMENDATIONS[0];
 
   return (
     <div className="space-y-12 pb-16">
@@ -81,20 +114,20 @@ export const HomePage: React.FC = () => {
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-sm rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-white">
                 <img
-                  src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80"
-                  alt="Món ăn tiêu biểu"
+                  src={heroFeatured.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80"}
+                  alt={heroFeatured.name}
                   className="w-full aspect-[4/3] object-cover"
                 />
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <MatchScoreIndicator score={0.98} />
-                    <span className="text-xs font-extrabold text-primary">59.000 đ</span>
+                    <MatchScoreIndicator score={heroFeatured.match_score} />
+                    <span className="text-xs font-extrabold text-primary">{formatVND(heroFeatured.price)}</span>
                   </div>
                   <h3 className="font-extrabold text-slate-800 text-sm">
-                    Cơm ức gà nướng sốt mè rang
+                    {heroFeatured.name}
                   </h3>
                   <p className="text-[11px] text-slate-500 leading-relaxed bg-violet-50/70 p-2.5 rounded-xl border border-violet-100">
-                    💡 <em>"Đề xuất cho bạn vì giàu protein (38g), ít calo (480 kcal), đáp ứng chuẩn mục tiêu dinh dưỡng."</em>
+                    💡 <em>"{heroFeatured.match_reason}"</em>
                   </p>
                   <Button onClick={() => navigate("/recommendations")} className="w-full" size="sm">
                     Khám phá toàn bộ thực đơn gợi ý
@@ -155,7 +188,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_RECOMMENDATIONS.map((item) => (
+          {recommendations.map((item) => (
             <div
               key={item.id}
               className="bg-white rounded-2xl border border-violet-100 shadow-sm hover:shadow-md transition-all p-4 flex flex-col justify-between"
@@ -196,14 +229,14 @@ export const HomePage: React.FC = () => {
       {/* 4. CATEGORIES GRID */}
       <section className="container mx-auto px-4 max-w-6xl">
         <h2 className="text-lg font-bold text-slate-800 mb-4">Danh mục ẩm thực phổ biến</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {MOCK_CATEGORIES.map((c) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {categories.map((c) => (
             <button
               key={c.id}
               onClick={() => navigate(`/foods?category=${c.slug}`)}
               className="p-4 rounded-2xl bg-white border border-slate-100 hover:border-primary/50 hover:shadow-md transition-all flex flex-col items-center justify-center text-center gap-2 group cursor-pointer"
             >
-              <span className="text-3xl group-hover:scale-110 transition-transform">{c.icon_url}</span>
+              <span className="text-3xl group-hover:scale-110 transition-transform">{c.icon_url || "🍲"}</span>
               <span className="text-xs font-bold text-slate-700 group-hover:text-primary transition-colors">
                 {c.name}
               </span>
@@ -226,7 +259,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {MOCK_FOODS.slice(0, 4).map((food) => (
+          {trendingFoods.slice(0, 4).map((food) => (
             <FoodCard key={food.id} food={food} />
           ))}
         </div>
@@ -243,7 +276,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {MOCK_RESTAURANTS.map((restaurant) => (
+          {restaurants.map((restaurant) => (
             <RestaurantCard key={restaurant.id} restaurant={restaurant} />
           ))}
         </div>

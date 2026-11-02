@@ -177,6 +177,8 @@ export interface RecommendedFoodItem {
   carbohydrates?: number | null;
 }
 
+export type FoodRecommendationItem = RecommendedFoodItem;
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

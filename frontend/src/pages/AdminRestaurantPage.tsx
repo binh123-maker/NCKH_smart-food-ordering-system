@@ -1,16 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Search, MapPin, Phone, Star, Edit2, Trash2 } from "lucide-react";
-import { MOCK_RESTAURANTS } from "../data/mockData";
 import { Restaurant } from "../types";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { restaurantService } from "../services/restaurantService";
+import { MOCK_RESTAURANTS } from "../data/mockData";
 
 export const AdminRestaurantPage: React.FC = () => {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(MOCK_RESTAURANTS);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRes, setEditingRes] = useState<Partial<Restaurant> | null>(null);
+
+  const fetchRestaurants = () => {
+    setIsLoading(true);
+    restaurantService
+      .getRestaurants()
+      .then((res) => {
+        if (res && res.items && res.items.length > 0) {
+          setRestaurants(res.items);
+        } else {
+          setRestaurants(MOCK_RESTAURANTS);
+        }
+      })
+      .catch(() => {
+        setRestaurants(MOCK_RESTAURANTS);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchRestaurants();
+  }, []);
 
   const filtered = restaurants.filter(
     (r) =>
@@ -97,56 +123,69 @@ export const AdminRestaurantPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((res) => (
-          <div
-            key={res.id}
-            className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col justify-between"
-          >
-            <div>
-              <div className="relative h-36">
-                <img src={res.image_url || ""} alt={res.name} className="w-full h-full object-cover" />
-                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-sm flex items-center gap-1 shadow-sm">
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> {res.rating_average}
+      {isLoading ? (
+        <div className="py-20 flex justify-center bg-white rounded-2xl border border-slate-200">
+          <LoadingSpinner size="lg" text="Đang tải danh sách nhà hàng đối tác..." />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((res) => (
+            <div
+              key={res.id}
+              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col justify-between"
+            >
+              <div>
+                <div className="relative h-36">
+                  <img
+                    src={
+                      res.image_url ||
+                      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80"
+                    }
+                    alt={res.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/90 text-slate-800 backdrop-blur-sm flex items-center gap-1 shadow-sm">
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> {res.rating_average}
+                  </div>
+                </div>
+                <div className="p-4 space-y-2">
+                  <h3 className="font-extrabold text-slate-900 text-sm">{res.name}</h3>
+                  <div className="space-y-1 text-slate-500 text-xs">
+                    <p className="flex items-center gap-1.5 truncate">
+                      <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>{res.address}</span>
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>{res.phone}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="p-4 space-y-2">
-                <h3 className="font-extrabold text-slate-900 text-sm">{res.name}</h3>
-                <div className="space-y-1 text-slate-500 text-xs">
-                  <p className="flex items-center gap-1.5 truncate">
-                    <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span>{res.address}</span>
-                  </p>
-                  <p className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span>{res.phone}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            <div className="p-4 pt-0 border-t border-slate-100 flex items-center justify-between mt-2">
-              <span className="text-[11px] font-bold text-emerald-600">
-                {res.opening_hours}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleOpenEdit(res)}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(res.id)}
-                  className="p-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+              <div className="p-4 pt-0 border-t border-slate-100 flex items-center justify-between mt-2">
+                <span className="text-[11px] font-bold text-emerald-600">
+                  {res.opening_hours}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenEdit(res)}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(res.id)}
+                    className="p-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Modal
         isOpen={isModalOpen}

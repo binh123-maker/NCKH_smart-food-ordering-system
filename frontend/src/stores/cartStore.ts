@@ -22,21 +22,9 @@ interface CartState {
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      items: [
-        {
-          id: "ci-1",
-          food_id: "food-1",
-          food_name: "Cơm ức gà nướng sốt mè rang",
-          unit_price: 59000,
-          quantity: 2,
-          subtotal: 118000,
-          image_url: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-          notes: "Ít sốt",
-          is_available: true,
-        },
-      ],
-      restaurantId: "rest-1",
-      restaurantName: "Bếp Xanh Dinh Dưỡng - Eat Clean",
+      items: [],
+      restaurantId: null,
+      restaurantName: null,
       isDrawerOpen: false,
       conflictItem: null,
 

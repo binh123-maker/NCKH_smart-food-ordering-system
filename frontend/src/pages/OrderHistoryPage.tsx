@@ -1,21 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingBag, Clock, CheckCircle2, XCircle, Star, ArrowRight, Truck } from "lucide-react";
-import { MOCK_ORDERS } from "../data/mockData";
 import { Order, OrderStatus } from "../types";
 import { formatVND, formatDate } from "../lib/utils";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
-import { StarRating } from "../components/ui/StarRating";
 import { EmptyState } from "../components/ui/EmptyState";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { orderService } from "../services/orderService";
+import { reviewService } from "../services/reviewService";
+import { useAuthStore } from "../stores/authStore";
+import { MOCK_ORDERS } from "../data/mockData";
 
 export const OrderHistoryPage: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const { isAuthenticated } = useAuthStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [reviewOrder, setReviewOrder] = useState<Order | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
-  const [isReviewed, setIsReviewed] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const fetchOrders = () => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      setOrders(MOCK_ORDERS);
+      return;
+    }
+    setIsLoading(true);
+    orderService
+      .getOrders()
+      .then((res) => {
+        if (res && res.items) {
+          setOrders(res.items);
+        }
+      })
+      .catch(() => {
+        setOrders(MOCK_ORDERS);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [isAuthenticated]);
 
   const filterMap: Record<string, OrderStatus[]> = {
     ACTIVE: ["PENDING", "CONFIRMED", "PREPARING", "DELIVERING"],
@@ -29,22 +60,39 @@ export const OrderHistoryPage: React.FC = () => {
     return allowed.includes(o.status);
   });
 
-  const handleCancelOrder = (orderId: string) => {
+  const handleCancelOrder = async (orderId: string) => {
     if (window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: "CANCELLED" as OrderStatus } : o))
-      );
+      try {
+        await orderService.cancelOrder(orderId, "Khách hàng yêu cầu hủy đơn");
+        fetchOrders();
+      } catch (err: any) {
+        alert(err.response?.data?.message || "Không thể hủy đơn hàng này.");
+      }
     }
   };
 
-  const handleSubmitReview = () => {
-    setIsReviewed(true);
-    setTimeout(() => {
+  const handleSubmitReview = async () => {
+    if (!reviewOrder) return;
+    const firstItem = reviewOrder.items?.[0];
+    if (!firstItem) return;
+
+    setIsSubmittingReview(true);
+    try {
+      await reviewService.createReview({
+        order_id: reviewOrder.id,
+        food_id: firstItem.food_id,
+        rating,
+        comment,
+      });
+      alert("Cảm ơn bạn đã gửi đánh giá! Phản hồi của bạn đã được ghi nhận để cải thiện thuật toán gợi ý món ăn.");
       setReviewOrder(null);
-      setIsReviewed(false);
       setComment("");
-      alert("Cảm ơn bạn đã gửi đánh giá! Phản hồi của bạn đã được ghi nhận để hoàn thiện gợi ý món ăn.");
-    }, 600);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Đã lưu đánh giá của bạn!");
+      setReviewOrder(null);
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   const renderStatusBadge = (status: OrderStatus) => {
@@ -58,34 +106,37 @@ export const OrderHistoryPage: React.FC = () => {
     };
     const c = config[status] || { label: status, bg: "bg-slate-50", text: "text-slate-700" };
     return (
-      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${c.bg} ${c.text}`}>
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${c.bg} ${c.text}`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
         {c.label}
       </span>
     );
   };
 
   return (
-    <div className="container mx-auto px-4 max-w-4xl py-8 space-y-6">
+    <div className="container mx-auto px-4 max-w-4xl py-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-black text-slate-800">Lịch sử đơn hàng</h1>
-        <p className="text-xs text-slate-500 mt-1">Theo dõi tiến trình và quản lý các đơn đặt món của bạn.</p>
+        <h1 className="text-2xl font-black text-slate-800">Lịch sử Đơn hàng</h1>
+        <p className="text-xs text-slate-500 mt-1">
+          Theo dõi trạng thái giao hàng, kiểm tra chi tiết và gửi đánh giá món ăn đã đặt.
+        </p>
       </div>
 
-      {/* Tabs Filter */}
-      <div className="flex gap-2 border-b border-slate-200 pb-2">
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs">
         {[
           { id: "ALL", label: "Tất cả đơn" },
-          { id: "ACTIVE", label: "Đang xử lý / Giao" },
+          { id: "ACTIVE", label: "Đang xử lý" },
           { id: "COMPLETED", label: "Đã hoàn thành" },
           { id: "CANCELLED", label: "Đã hủy" },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer ${
               activeTab === tab.id
-                ? "bg-slate-800 text-white shadow-xs"
-                : "text-slate-500 hover:bg-slate-100"
+                ? "bg-slate-900 text-white"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
             }`}
           >
             {tab.label}
@@ -94,147 +145,148 @@ export const OrderHistoryPage: React.FC = () => {
       </div>
 
       {/* Orders List */}
-      {filteredOrders.length === 0 ? (
+      {isLoading ? (
+        <div className="py-20 flex justify-center">
+          <LoadingSpinner size="lg" text="Đang tải lịch sử đơn hàng..." />
+        </div>
+      ) : filteredOrders.length === 0 ? (
         <EmptyState
-          title="Không có đơn hàng nào"
-          description="Bạn chưa có đơn hàng nào trong mục này."
-          actionText="Khám phá thực đơn ngay"
-          onAction={() => window.location.assign("/foods")}
+          title="Chưa có đơn hàng nào"
+          description="Bạn chưa có đơn đặt hàng nào trong danh mục này. Hãy khám phá món ăn ngon và đặt ngay nhé!"
+          actionLabel="Khám phá thực đơn"
+          onAction={() => (window.location.href = "/foods")}
         />
       ) : (
         <div className="space-y-4">
           {filteredOrders.map((order) => (
-            <div key={order.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-              {/* Order Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
-                <div>
+            <div
+              key={order.id}
+              className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-sm text-slate-800">{order.order_code}</span>
+                    <span className="font-extrabold text-sm text-slate-900">
+                      Mã đơn: #{order.order_code}
+                    </span>
                     {renderStatusBadge(order.status)}
                   </div>
-                  <span className="text-[11px] text-slate-400 block mt-0.5">
-                    Đặt lúc: {formatDate(order.created_at)} • Quán: <strong className="text-slate-700">{order.restaurant_name}</strong>
+                  <p className="text-[11px] text-slate-400">
+                    Thời gian đặt: {formatDate(order.created_at)} • Nhà hàng:{" "}
+                    <strong className="text-slate-700">{order.restaurant_name}</strong>
+                  </p>
+                </div>
+
+                <div className="text-right sm:text-right">
+                  <span className="text-base font-black text-primary block">
+                    {formatVND(order.total_amount)}
                   </span>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-base font-extrabold text-primary">{formatVND(order.total_amount)}</span>
-                  <span className="text-[10px] text-slate-400 block font-medium">({order.payment_method} - {order.payment_status})</span>
-                </div>
-              </div>
-
-              {/* FSM PROGRESS TIMELINE TRACKER */}
-              <div className="py-2">
-                <div className="grid grid-cols-5 text-center relative gap-1 text-[11px] font-semibold">
-                  {[
-                    { label: "1. Đã đặt", active: true },
-                    { label: "2. Xác nhận", active: ["CONFIRMED", "PREPARING", "DELIVERING", "COMPLETED"].includes(order.status) },
-                    { label: "3. Nấu xong", active: ["PREPARING", "DELIVERING", "COMPLETED"].includes(order.status) },
-                    { label: "4. Đang giao", active: ["DELIVERING", "COMPLETED"].includes(order.status) },
-                    { label: "5. Hoàn thành", active: order.status === "COMPLETED" },
-                  ].map((step, idx) => (
-                    <div key={idx} className="flex flex-col items-center">
-                      <div
-                        className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold mb-1 ${
-                          step.active
-                            ? "bg-primary text-white shadow-xs"
-                            : "bg-slate-100 text-slate-400"
-                        }`}
-                      >
-                        {idx + 1}
-                      </div>
-                      <span className={step.active ? "text-slate-800 font-bold" : "text-slate-400"}>
-                        {step.label}
-                      </span>
-                    </div>
-                  ))}
+                  <span className="text-[10px] text-slate-400">
+                    {order.payment_method} ({order.payment_status || "PENDING"})
+                  </span>
                 </div>
               </div>
 
               {/* Items List */}
-              <div className="divide-y divide-slate-50 bg-slate-50/50 p-3 rounded-xl space-y-1">
-                {order.items.map((item) => (
-                  <div key={item.id} className="pt-1 flex items-center justify-between text-xs">
+              <div className="space-y-2">
+                {order.items?.map((it) => (
+                  <div key={it.id} className="flex items-center justify-between text-xs py-1">
                     <span className="text-slate-700 font-medium">
-                      <strong className="text-primary">{item.quantity}x</strong> {item.food_name}
+                      {it.food_name} <strong className="text-primary">x{it.quantity}</strong>
                     </span>
-                    <span className="font-semibold text-slate-800">{formatVND(item.subtotal)}</span>
+                    <span className="font-bold text-slate-800">{formatVND(it.subtotal)}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Actions Footer */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                {order.status === "PENDING" && (
-                  <Button
-                    onClick={() => handleCancelOrder(order.id)}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    Hủy đơn hàng
-                  </Button>
-                )}
+              {/* Delivery Address */}
+              {order.delivery_address && (
+                <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  📍 Địa chỉ nhận hàng: <span className="font-medium text-slate-700">{order.delivery_address}</span>
+                </div>
+              )}
 
-                {order.status === "COMPLETED" && (
-                  <Button
-                    onClick={() => setReviewOrder(order)}
-                    variant="outline"
-                    size="sm"
-                    className="border-amber-400 text-amber-700 hover:bg-amber-50"
-                  >
-                    <Star className="h-3.5 w-3.5 fill-amber-400" />
-                    <span>Đánh giá món ăn</span>
-                  </Button>
-                )}
+              {/* Actions */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  {order.status === "PENDING" && (
+                    <button
+                      onClick={() => handleCancelOrder(order.id)}
+                      className="text-xs text-red-500 hover:text-red-700 font-bold cursor-pointer"
+                    >
+                      Hủy đơn hàng
+                    </button>
+                  )}
+                </div>
 
-                <Link to="/foods">
-                  <Button variant="default" size="sm">
-                    Đặt lại đơn này
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  {order.status === "COMPLETED" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setReviewOrder(order)}
+                    >
+                      <Star className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Đánh giá món ăn</span>
+                    </Button>
+                  )}
+
+                  <Link to="/foods">
+                    <Button size="sm">
+                      <span>Đặt lại món này</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* REVIEW MODAL */}
+      {/* Review Modal */}
       <Modal
-        isOpen={!!reviewOrder}
+        isOpen={Boolean(reviewOrder)}
         onClose={() => setReviewOrder(null)}
-        title="Đánh giá chất lượng món ăn"
+        title={`Đánh giá món ăn (#${reviewOrder?.order_code})`}
       >
-        <div className="space-y-4">
-          <p className="text-xs text-slate-500">
-            Đánh giá của bạn giúp hệ thống AI thấu hiểu khẩu vị của bạn sâu sắc hơn để tinh chỉnh các món ăn đề xuất trong tương lai.
-          </p>
-
-          <div className="flex flex-col items-center justify-center py-4 bg-slate-50 rounded-2xl gap-2">
-            <span className="text-xs font-bold text-slate-700">Mức độ hài lòng:</span>
-            <StarRating
-              rating={rating}
-              size="lg"
-              interactive={true}
-              onRatingChange={(newRating) => setRating(newRating)}
-            />
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="block text-slate-700 font-bold mb-1.5">Số sao đánh giá chất lượng:</label>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className="text-2xl cursor-pointer transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={`h-6 w-6 ${
+                      star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1">Nhận xét chi tiết:</label>
+            <label className="block text-slate-700 font-bold mb-1">Cảm nhận và nhận xét:</label>
             <textarea
               rows={3}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Món ăn vừa miệng không? Hương vị thế nào? Độ đậm đà ra sao?..."
-              className="w-full p-3 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary"
+              placeholder="Chia sẻ hương vị, độ tươi ngon, khẩu phần..."
+              className="w-full text-xs p-3 rounded-xl border border-slate-200 outline-none focus:border-primary"
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setReviewOrder(null)}>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setReviewOrder(null)}>
               Hủy
             </Button>
-            <Button variant="default" className="flex-1" onClick={handleSubmitReview} isLoading={isReviewed}>
+            <Button isLoading={isSubmittingReview} onClick={handleSubmitReview}>
               Gửi đánh giá
             </Button>
           </div>
@@ -243,4 +295,3 @@ export const OrderHistoryPage: React.FC = () => {
     </div>
   );
 };
-

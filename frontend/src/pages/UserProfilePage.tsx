@@ -1,42 +1,135 @@
-import React, { useState } from "react";
-import { User, MapPin, Sparkles, Check, Plus, Trash2, Shield } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { User as UserIcon, MapPin, Sparkles, Check, Plus, Shield } from "lucide-react";
 import { useAuthStore } from "../stores/authStore";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { Modal } from "../components/ui/Modal";
+import { userService } from "../services/userService";
+import { foodService } from "../services/foodService";
+import { UserAddress, Category } from "../types";
 import { MOCK_CATEGORIES } from "../data/mockData";
 
 export const UserProfilePage: React.FC = () => {
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"profile" | "addresses" | "preferences">("profile");
 
   // Profile Form State
   const [fullName, setFullName] = useState(user?.full_name || "Nguyễn Văn A");
   const [phone, setPhone] = useState(user?.phone || "0901234567");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
 
   // Addresses State
-  const [addresses, setAddresses] = useState([
-    { id: "addr-1", name: "Nhà riêng", recipient: "Nguyễn Văn A (0901234567)", detail: "123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM", isDefault: true },
-    { id: "addr-2", name: "Công ty", recipient: "Nguyễn Văn A (0901234567)", detail: "Tầng 8, Tòa nhà Vincom Center, Quận 1, TP.HCM", isDefault: false },
-  ]);
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+  const [newRecipientName, setNewRecipientName] = useState("");
+  const [newRecipientPhone, setNewRecipientPhone] = useState("");
+  const [newAddressLine, setNewAddressLine] = useState("");
+  const [newDistrict, setNewDistrict] = useState("Quận 1");
+  const [newCity, setNewCity] = useState("TP. Hồ Chí Minh");
 
   // RecSys Preferences State
+  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
   const [preferredCats, setPreferredCats] = useState<string[]>(["cat-1", "cat-3"]);
-  const [budget, setBudget] = useState(60000);
-  const [dailyCalo, setDailyCalo] = useState(2000);
+  const [budget, setBudget] = useState(65000);
+  const [dailyCalo, setDailyCalo] = useState(1800);
   const [proteinMin, setProteinMin] = useState(30);
+  const [dietaryGoals, setDietaryGoals] = useState<string[]>(["Eat Clean", "Ít dầu mỡ"]);
+  const [isSavingPref, setIsSavingPref] = useState(false);
   const [prefSaved, setPrefSaved] = useState(false);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isAuthenticated) {
+      // 1. Fetch Profile
+      userService.getProfile().then((data) => {
+        if (data) {
+          if (data.full_name) setFullName(data.full_name);
+          if (data.phone) setPhone(data.phone);
+        }
+      }).catch(() => {});
+
+      // 2. Fetch Addresses
+      userService.getAddresses().then((addrs) => {
+        if (addrs) setAddresses(addrs);
+      }).catch(() => {});
+
+      // 3. Fetch Preferences
+      userService.getPreferences().then((pref) => {
+        if (pref) {
+          if (pref.preferred_categories) setPreferredCats(pref.preferred_categories);
+          if (pref.budget_per_meal) setBudget(pref.budget_per_meal);
+          if (pref.daily_calorie_target) setDailyCalo(pref.daily_calorie_target);
+          if (pref.preferred_protein_min) setProteinMin(pref.preferred_protein_min);
+          if (pref.dietary_restrictions) setDietaryGoals(pref.dietary_restrictions);
+        }
+      }).catch(() => {});
+    }
+
+    foodService.getCategories().then((cats) => {
+      if (cats && cats.length > 0) setCategories(cats);
+    }).catch(() => {});
+  }, [isAuthenticated]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({ full_name: fullName, phone });
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 2000);
+    setIsSavingProfile(true);
+    try {
+      await userService.updateProfile({ full_name: fullName, phone });
+      updateUser({ full_name: fullName, phone });
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Cập nhật hồ sơ thất bại");
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
-  const handleSavePreferences = () => {
-    setPrefSaved(true);
-    setTimeout(() => setPrefSaved(false), 2000);
+  const handleCreateAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const added = await userService.addAddress({
+        recipient_name: newRecipientName,
+        recipient_phone: newRecipientPhone,
+        address_line: newAddressLine,
+        district: newDistrict,
+        city: newCity,
+        is_default: addresses.length === 0,
+      });
+      setAddresses((prev) => [...prev, added]);
+      setIsAddAddressOpen(false);
+      setNewRecipientName("");
+      setNewRecipientPhone("");
+      setNewAddressLine("");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Thêm địa chỉ thất bại");
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setIsSavingPref(true);
+    try {
+      await userService.updatePreferences({
+        preferred_categories: preferredCats,
+        budget_per_meal: budget,
+        daily_calorie_target: dailyCalo,
+        preferred_protein_min: proteinMin,
+        dietary_restrictions: dietaryGoals,
+        is_onboarded: true,
+      });
+      setPrefSaved(true);
+      setTimeout(() => setPrefSaved(false), 2000);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Cập nhật sở thích thất bại");
+    } finally {
+      setIsSavingPref(false);
+    }
+  };
+
+  const toggleCategory = (catId: string) => {
+    setPreferredCats((prev) =>
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
+    );
   };
 
   return (
@@ -64,152 +157,201 @@ export const UserProfilePage: React.FC = () => {
             activeTab === "addresses" ? "bg-slate-800 text-white shadow-xs" : "text-slate-500 hover:bg-slate-100"
           }`}
         >
-          Sổ địa chỉ ({addresses.length})
+          Sổ địa chỉ giao hàng ({addresses.length})
         </button>
         <button
           onClick={() => setActiveTab("preferences")}
-          className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
-            activeTab === "preferences" ? "bg-violet-600 text-white shadow-xs" : "text-violet-600 hover:bg-violet-50"
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+            activeTab === "preferences" ? "bg-violet-600 text-white shadow-xs" : "text-slate-500 hover:bg-slate-100"
           }`}
         >
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Sở thích & Mục tiêu Dinh dưỡng (RecSys)</span>
+          <span>Sở thích & Dinh dưỡng AI</span>
         </button>
       </div>
 
       {/* TAB 1: PROFILE */}
       {activeTab === "profile" && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm max-w-xl space-y-6">
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
-              <img
-                src={user?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80"}
-                alt="Avatar"
-                className="h-16 w-16 rounded-full object-cover border-2 border-primary"
-              />
-              <div>
-                <h3 className="font-bold text-sm text-slate-800">{user?.full_name || "Khách hàng"}</h3>
-                <span className="text-xs text-slate-400">{user?.email}</span>
-                <span className="block text-[10px] text-emerald-600 font-bold uppercase mt-0.5">Tài khoản đang hoạt động</span>
-              </div>
+        <form onSubmit={handleSaveProfile} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 max-w-xl">
+          <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
+            <div className="h-16 w-16 rounded-full bg-orange-100 text-primary flex items-center justify-center font-black text-xl">
+              {fullName.charAt(0) || "U"}
             </div>
-
-            <Input
-              label="Họ và tên"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
-
-            <Input
-              label="Địa chỉ Email"
-              type="email"
-              value={user?.email || ""}
-              disabled
-              className="bg-slate-50 cursor-not-allowed"
-            />
-
-            <Input
-              label="Số điện thoại"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-
-            <div className="pt-2 flex items-center justify-between">
-              <Button type="submit">Lưu thay đổi</Button>
-              {profileSaved && (
-                <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                  <Check className="h-4 w-4" /> Đã cập nhật thành công!
-                </span>
-              )}
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">{fullName || "Người dùng"}</h3>
+              <p className="text-xs text-slate-400">{user?.email}</p>
+              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 mt-1">
+                Vai trò: {user?.role || "CUSTOMER"}
+              </span>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <Input
+            label="Họ và tên hiển thị"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Số điện thoại"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Địa chỉ Email"
+            value={user?.email || ""}
+            disabled
+            className="bg-slate-50 text-slate-400"
+          />
+
+          <div className="flex items-center gap-3 pt-2">
+            <Button type="submit" isLoading={isSavingProfile}>
+              Lưu thay đổi
+            </Button>
+            {profileSaved && (
+              <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                <Check className="h-4 w-4" /> Đã cập nhật thành công!
+              </span>
+            )}
+          </div>
+        </form>
       )}
 
       {/* TAB 2: ADDRESSES */}
       {activeTab === "addresses" && (
         <div className="space-y-4 max-w-2xl">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-sm text-slate-700">Địa chỉ giao hàng đã lưu</h3>
-            <Button size="sm" variant="outline" className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" />
-              <span>Thêm địa chỉ mới</span>
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500">Danh sách địa chỉ của bạn:</span>
+            <Button size="sm" onClick={() => setIsAddAddressOpen(true)} className="flex items-center gap-1.5">
+              <Plus className="h-4 w-4" /> Thêm địa chỉ mới
             </Button>
           </div>
 
           <div className="space-y-3">
-            {addresses.map((a) => (
-              <div
-                key={a.id}
-                className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-start justify-between gap-4"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-slate-800">{a.name}</span>
-                    {a.isDefault && (
-                      <span className="bg-orange-50 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100">
-                        Mặc định
-                      </span>
-                    )}
+            {addresses.length === 0 ? (
+              <p className="text-xs text-slate-400 py-8 text-center bg-white rounded-2xl border border-slate-100">
+                Chưa có địa chỉ nào được lưu. Hãy thêm địa chỉ để nhận hàng thuận tiện!
+              </p>
+            ) : (
+              addresses.map((addr) => (
+                <div key={addr.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-start justify-between">
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary shrink-0" />
+                      <span className="font-bold text-slate-900">{addr.recipient_name} ({addr.recipient_phone})</span>
+                      {addr.is_default && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-primary">
+                          Mặc định
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-600 pl-6">
+                      {addr.address_line}, {addr.district}, {addr.city}
+                    </p>
                   </div>
-                  <p className="text-xs font-semibold text-slate-600">{a.recipient}</p>
-                  <p className="text-xs text-slate-400">{a.detail}</p>
                 </div>
+              ))
+            )}
+          </div>
 
-                <div className="flex items-center gap-2">
-                  {!a.isDefault && (
-                    <button
-                      onClick={() =>
-                        setAddresses((prev) =>
-                          prev.map((item) => ({ ...item, isDefault: item.id === a.id }))
-                        )
-                      }
-                      className="text-xs text-primary hover:underline font-semibold"
-                    >
-                      Đặt mặc định
-                    </button>
-                  )}
-                  <button className="p-1 text-slate-300 hover:text-red-500">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+          <Modal
+            isOpen={isAddAddressOpen}
+            onClose={() => setIsAddAddressOpen(false)}
+            title="Thêm địa chỉ giao hàng mới"
+          >
+            <form onSubmit={handleCreateAddress} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Họ tên người nhận</label>
+                <Input
+                  value={newRecipientName}
+                  onChange={(e) => setNewRecipientName(e.target.value)}
+                  placeholder="VD: Nguyễn Văn A"
+                  required
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Số điện thoại</label>
+                <Input
+                  value={newRecipientPhone}
+                  onChange={(e) => setNewRecipientPhone(e.target.value)}
+                  placeholder="VD: 0901234567"
+                  required
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Số nhà, tên đường</label>
+                <Input
+                  value={newAddressLine}
+                  onChange={(e) => setNewAddressLine(e.target.value)}
+                  placeholder="VD: 123 Nguyễn Huệ, Phường Bến Nghé"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Quận / Huyện</label>
+                  <Input
+                    value={newDistrict}
+                    onChange={(e) => setNewDistrict(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Tỉnh / Thành phố</label>
+                  <Input
+                    value={newCity}
+                    onChange={(e) => setNewCity(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setIsAddAddressOpen(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit">Lưu địa chỉ</Button>
+              </div>
+            </form>
+          </Modal>
         </div>
       )}
 
-      {/* TAB 3: RECSYS PREFERENCES */}
+      {/* TAB 3: AI RECSYS PREFERENCES */}
       {activeTab === "preferences" && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm max-w-2xl space-y-6">
-          <div className="bg-violet-50 p-4 rounded-xl border border-violet-100 text-xs text-violet-800 leading-relaxed">
-            ✨ Các tùy chọn này được nạp trực tiếp vào **Vector Đặc trưng Người dùng (User Feature Vector)** của mô hình Content-Based và Hybrid RecSys để tính điểm phù hợp (Match Score).
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6 max-w-2xl">
+          <div className="bg-violet-50 p-4 rounded-xl border border-violet-100 flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-violet-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-xs font-bold text-violet-900">Huấn luyện hồ sơ khẩu vị của bạn</h3>
+              <p className="text-[11px] text-violet-700 leading-relaxed mt-0.5">
+                Các thông số này sẽ trực tiếp điều chỉnh trọng số hàm gợi ý (Content-Based Vector & SVD Factorization) để ưu tiên các món chuẩn chỉ số dinh dưỡng bạn đề ra.
+              </p>
+            </div>
           </div>
 
           {/* Categories */}
           <div>
             <label className="text-xs font-bold text-slate-700 block mb-2">
-              Danh mục ẩm thực ưa thích:
+              Thể loại món ăn yêu thích:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {MOCK_CATEGORIES.map((c) => {
-                const isSel = preferredCats.includes(c.id);
+              {categories.map((c) => {
+                const isSelected = preferredCats.includes(c.id);
                 return (
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() =>
-                      setPreferredCats((prev) =>
-                        prev.includes(c.id) ? prev.filter((id) => id !== c.id) : [...prev, c.id]
-                      )
-                    }
-                    className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all ${
-                      isSel
+                    onClick={() => toggleCategory(c.id)}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+                      isSelected
                         ? "bg-violet-600 text-white border-violet-600"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    <span>{c.icon_url}</span>
+                    <span>{c.icon_url || "🍲"}</span>
                     <span className="truncate">{c.name}</span>
                   </button>
                 );
@@ -220,12 +362,12 @@ export const UserProfilePage: React.FC = () => {
           {/* Budget */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-bold text-slate-700">Ngân sách kỳ vọng một bữa ăn:</label>
+              <label className="text-xs font-bold text-slate-700">Ngân sách lý tưởng mỗi bữa:</label>
               <span className="text-xs font-extrabold text-primary">{budget.toLocaleString("vi-VN")} đ</span>
             </div>
             <input
               type="range"
-              min="25000"
+              min="30000"
               max="150000"
               step="5000"
               value={budget}
@@ -234,16 +376,16 @@ export const UserProfilePage: React.FC = () => {
             />
           </div>
 
-          {/* Calorie Target */}
+          {/* Calories */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-bold text-slate-700">Mục tiêu Calo hàng ngày (Daily Calories):</label>
-              <span className="text-xs font-extrabold text-orange-600">{dailyCalo} kcal / ngày</span>
+              <label className="text-xs font-bold text-slate-700">Mục tiêu Calo hàng ngày:</label>
+              <span className="text-xs font-bold text-orange-600">{dailyCalo} kcal / ngày</span>
             </div>
             <input
               type="range"
               min="1200"
-              max="3500"
+              max="3200"
               step="50"
               value={dailyCalo}
               onChange={(e) => setDailyCalo(Number(e.target.value))}
@@ -251,15 +393,15 @@ export const UserProfilePage: React.FC = () => {
             />
           </div>
 
-          {/* Min Protein */}
+          {/* Protein */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-bold text-slate-700">Lượng Đạm (Protein) tối thiểu mong muốn mỗi bữa:</label>
-              <span className="text-xs font-extrabold text-emerald-600">&ge; {proteinMin}g Protein</span>
+              <label className="text-xs font-bold text-slate-700">Mức Protein mong muốn mỗi bữa:</label>
+              <span className="text-xs font-bold text-emerald-600">&ge; {proteinMin} g đạm</span>
             </div>
             <input
               type="range"
-              min="10"
+              min="15"
               max="60"
               step="5"
               value={proteinMin}
@@ -268,13 +410,17 @@ export const UserProfilePage: React.FC = () => {
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-between">
-            <Button onClick={handleSavePreferences} variant="ai">
-              Cập nhật dữ liệu AI
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              variant="ai"
+              onClick={handleSavePreferences}
+              isLoading={isSavingPref}
+            >
+              Cập nhật Hồ sơ Gu ẩm thực
             </Button>
             {prefSaved && (
-              <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                <Check className="h-4 w-4" /> Đã lưu thông số thành công!
+              <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                <Check className="h-4 w-4" /> Đã lưu thành công!
               </span>
             )}
           </div>
@@ -283,4 +429,3 @@ export const UserProfilePage: React.FC = () => {
     </div>
   );
 };
-

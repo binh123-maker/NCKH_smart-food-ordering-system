@@ -1,21 +1,39 @@
-import React, { useState } from "react";
-import { Brain, Sparkles, RefreshCw, BarChart2, CheckCircle2, AlertCircle, Database, Layers } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Brain, Sparkles, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { adminService } from "../services/adminService";
 
 export const AdminRecsysPage: React.FC = () => {
   const [isRetraining, setIsRetraining] = useState(false);
   const [retrainSuccess, setRetrainSuccess] = useState(false);
+  const [recsysData, setRecsysData] = useState<any>(null);
+
+  useEffect(() => {
+    adminService.getRecsysMetrics().then((data) => {
+      if (data) setRecsysData(data);
+    }).catch(() => {});
+  }, []);
+
+  const activeModel = recsysData?.active_model || {
+    version_code: "v1.0.4-hybrid",
+    algorithm_type: "HYBRID_WEIGHTED",
+    ndcg_at_k: 0.842,
+    precision_at_k: 0.725,
+    recall_at_k: 0.681,
+    coverage_rate: 0.942,
+    trained_at: "2026-11-02 04:00:00",
+  };
 
   const modelVersions = [
     {
-      version: "v1.0.4-hybrid",
+      version: activeModel.version_code || "v1.0.4-hybrid",
       model_type: "Hybrid (Content-Based 40% + SVD 60%)",
-      ndcg_10: 0.842,
-      precision_10: 0.725,
-      recall_10: 0.681,
+      ndcg_10: activeModel.ndcg_at_k || 0.842,
+      precision_10: activeModel.precision_at_k || 0.725,
+      recall_10: activeModel.recall_at_k || 0.681,
       map_10: 0.704,
-      coverage: 94.2,
-      trained_at: "2026-11-02 04:00:00",
+      coverage: (activeModel.coverage_rate ? activeModel.coverage_rate * (activeModel.coverage_rate <= 1 ? 100 : 1) : 94.2).toFixed(1),
+      trained_at: String(activeModel.trained_at).slice(0, 19).replace("T", " "),
       is_active: true,
     },
     {
@@ -25,7 +43,7 @@ export const AdminRecsysPage: React.FC = () => {
       precision_10: 0.682,
       recall_10: 0.640,
       map_10: 0.655,
-      coverage: 88.5,
+      coverage: "88.5",
       trained_at: "2026-11-01 04:00:00",
       is_active: false,
     },
@@ -36,7 +54,7 @@ export const AdminRecsysPage: React.FC = () => {
       precision_10: 0.654,
       recall_10: 0.612,
       map_10: 0.628,
-      coverage: 96.0,
+      coverage: "96.0",
       trained_at: "2026-10-31 04:00:00",
       is_active: false,
     },
@@ -72,7 +90,7 @@ export const AdminRecsysPage: React.FC = () => {
         <Button
           onClick={handleRetrain}
           disabled={isRetraining}
-          className="bg-purple-600 hover:bg-purple-700 text-white shrink-0 flex items-center gap-2"
+          className="bg-purple-600 hover:bg-purple-700 text-white shrink-0 flex items-center gap-2 cursor-pointer"
         >
           <RefreshCw className={`h-4 w-4 ${isRetraining ? "animate-spin" : ""}`} />
           {isRetraining ? "Đang huấn luyện lại..." : "Chạy Retrain Pipeline"}
@@ -90,23 +108,23 @@ export const AdminRecsysPage: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
           <span className="text-[11px] font-bold text-slate-400 uppercase">NDCG@10</span>
-          <p className="text-2xl font-black text-purple-600 mt-1">0.842</p>
+          <p className="text-2xl font-black text-purple-600 mt-1">{activeModel.ndcg_at_k || 0.842}</p>
           <span className="text-[10px] text-emerald-600 font-semibold">+5.5% vs SVD</span>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
           <span className="text-[11px] font-bold text-slate-400 uppercase">Precision@10</span>
-          <p className="text-2xl font-black text-slate-800 mt-1">0.725</p>
+          <p className="text-2xl font-black text-slate-800 mt-1">{activeModel.precision_at_k || 0.725}</p>
           <span className="text-[10px] text-emerald-600 font-semibold">+6.3% vs SVD</span>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
           <span className="text-[11px] font-bold text-slate-400 uppercase">Recall@10</span>
-          <p className="text-2xl font-black text-slate-800 mt-1">0.681</p>
+          <p className="text-2xl font-black text-slate-800 mt-1">{activeModel.recall_at_k || 0.681}</p>
           <span className="text-[10px] text-emerald-600 font-semibold">+6.4% vs SVD</span>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">MAP@10</span>
-          <p className="text-2xl font-black text-slate-800 mt-1">0.704</p>
-          <span className="text-[10px] text-emerald-600 font-semibold">+7.5% vs SVD</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase">Tương tác đã ghi</span>
+          <p className="text-2xl font-black text-slate-800 mt-1">{recsysData?.total_interactions_collected || 0}</p>
+          <span className="text-[10px] text-slate-400">User Interaction logs</span>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center col-span-2 md:col-span-1">
           <span className="text-[11px] font-bold text-slate-400 uppercase">Coverage</span>
@@ -166,4 +184,3 @@ export const AdminRecsysPage: React.FC = () => {
     </div>
   );
 };
-

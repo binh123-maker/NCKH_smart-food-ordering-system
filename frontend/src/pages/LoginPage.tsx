@@ -7,6 +7,7 @@ import { Sparkles, Mail, Lock } from "lucide-react";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { useAuthStore } from "../stores/authStore";
+import { authService } from "../services/authService";
 
 const loginSchema = z.object({
   email: z.string().email("Vui lòng nhập địa chỉ email hợp lệ"),
@@ -23,34 +24,36 @@ export const LoginPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "nguyenvana@gmail.com",
-      password: "password123",
+      email: "customer@example.com",
+      password: "Customer@123456",
     },
   });
 
   const onSubmit = async (data: LoginFormData) => {
     setErrorMsg(null);
     try {
-      // Mock login for frontend phase
-      login(
-        {
-          id: "usr-demo",
-          email: data.email,
-          full_name: "Nguyễn Văn A",
-          role: "CUSTOMER",
-          is_active: true,
-          is_onboarded: true,
-          avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
-        },
-        "mock-jwt-token-for-dev"
-      );
-      navigate("/");
-    } catch (err: unknown) {
-      setErrorMsg("Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.");
+      const tokens = await authService.login(data);
+      localStorage.setItem("access_token", tokens.access_token);
+      localStorage.setItem("refresh_token", tokens.refresh_token);
+      const user = await authService.getMe();
+      login(user, tokens.access_token, tokens.refresh_token);
+
+      if (user.role === "ADMIN") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error?.details ||
+        "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
+      setErrorMsg(message);
     }
   };
 
@@ -124,6 +127,33 @@ export const LoginPage: React.FC = () => {
               Đăng nhập ngay
             </Button>
           </form>
+
+          {/* Quick Demo Fillers */}
+          <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Tài khoản demo sẵn có:</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setValue("email", "customer@example.com");
+                  setValue("password", "Customer@123456");
+                }}
+                className="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold text-center transition-colors"
+              >
+                👤 Khách hàng
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setValue("email", "admin@foodrecsys.com");
+                  setValue("password", "Admin@123456");
+                }}
+                className="py-1.5 px-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-800 text-[11px] font-semibold text-center transition-colors"
+              >
+                ⚡ Quản trị viên
+              </button>
+            </div>
+          </div>
 
           <p className="text-center text-xs text-slate-500 mt-6">
             Chưa có tài khoản?{" "}

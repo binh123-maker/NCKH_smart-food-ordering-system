@@ -7,6 +7,10 @@ import { Sparkles, Mail, Lock, User as UserIcon, Phone, Check, ArrowRight } from
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { useAuthStore } from "../stores/authStore";
+import { authService } from "../services/authService";
+import { userService } from "../services/userService";
+import { foodService } from "../services/foodService";
+import { Category } from "../types";
 import { MOCK_CATEGORIES } from "../data/mockData";
 
 const registerSchema = z.object({
@@ -27,12 +31,23 @@ export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
   const [basicData, setBasicData] = useState<RegisterFormData | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Step 2 Onboarding state
   const [selectedCats, setSelectedCats] = useState<string[]>(["cat-1", "cat-3"]);
   const [budget, setBudget] = useState<number>(50000);
   const [calorieTarget, setCalorieTarget] = useState<number>(2000);
   const [dietaryGoals, setDietaryGoals] = useState<string[]>(["HIGH_PROTEIN"]);
+
+  React.useEffect(() => {
+    foodService.getCategories().then((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    }).catch(() => {});
+  }, []);
 
   const {
     register,
@@ -43,6 +58,7 @@ export const RegisterPage: React.FC = () => {
   });
 
   const onStep1Submit = (data: RegisterFormData) => {
+    setErrorMsg(null);
     setBasicData(data);
     setStep(2); // Go to Cold Start Survey
   };
@@ -59,22 +75,41 @@ export const RegisterPage: React.FC = () => {
     );
   };
 
-  const handleFinishOnboarding = () => {
+  const handleFinishOnboarding = async () => {
     if (!basicData) return;
-    // Log user in with completed onboarding
-    login(
-      {
-        id: `usr-${Date.now()}`,
+    setIsRegistering(true);
+    setErrorMsg(null);
+    try {
+      const tokens = await authService.register({
         email: basicData.email,
-        full_name: basicData.fullName,
+        password: basicData.password,
         phone: basicData.phone,
-        role: "CUSTOMER",
-        is_active: true,
+        full_name: basicData.fullName,
+      });
+
+      localStorage.setItem("access_token", tokens.access_token);
+      localStorage.setItem("refresh_token", tokens.refresh_token);
+
+      // Save user preferences
+      await userService.updatePreferences({
+        preferred_categories: selectedCats,
+        budget_per_meal: budget,
+        daily_calorie_target: calorieTarget,
+        dietary_restrictions: dietaryGoals,
         is_onboarded: true,
-      },
-      "mock-jwt-token-registered"
-    );
-    navigate("/");
+      });
+
+      const user = await authService.getMe();
+      login(user, tokens.access_token, tokens.refresh_token);
+      navigate("/");
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error?.details ||
+        "Đăng ký không thành công. Vui lòng kiểm tra lại.";
+      setErrorMsg(message);
+      setIsRegistering(false);
+    }
   };
 
   return (
@@ -102,6 +137,13 @@ export const RegisterPage: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* Error alert */}
+        {errorMsg && (
+          <div className="mb-6 p-3 rounded-xl bg-red-50 text-red-600 text-xs font-medium border border-red-100">
+            {errorMsg}
+          </div>
+        )}
 
         {/* STEP 1: BASIC REGISTRATION */}
         {step === 1 && (
@@ -189,7 +231,7 @@ export const RegisterPage: React.FC = () => {
                 1. Chọn các thể loại ẩm thực bạn yêu thích (Chọn ít nhất 1):
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {MOCK_CATEGORIES.map((c) => {
+                {(categories.length > 0 ? categories : MOCK_CATEGORIES).map((c) => {
                   const isSelected = selectedCats.includes(c.id);
                   return (
                     <button
@@ -267,6 +309,7 @@ export const RegisterPage: React.FC = () => {
               <Button
                 variant="ai"
                 className="flex-1"
+                isLoading={isRegistering}
                 onClick={handleFinishOnboarding}
               >
                 <span>Hoàn tất & Nhận gợi ý</span>

@@ -1,17 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Store, SlidersHorizontal } from "lucide-react";
-import { MOCK_RESTAURANTS } from "../data/mockData";
+import { restaurantService } from "../services/restaurantService";
+import { Restaurant } from "../types";
 import { RestaurantCard } from "../components/common/RestaurantCard";
 import { EmptyState } from "../components/ui/EmptyState";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { MOCK_RESTAURANTS } from "../data/mockData";
 
 export const RestaurantListingPage: React.FC = () => {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"rating" | "distance" | "name">("rating");
 
-  const filtered = MOCK_RESTAURANTS.filter((r) =>
-    r.name.toLowerCase().includes(search.toLowerCase()) ||
-    r.address.toLowerCase().includes(search.toLowerCase())
-  ).sort((a, b) => {
+  useEffect(() => {
+    setIsLoading(true);
+    restaurantService
+      .getRestaurants({ search: search || undefined })
+      .then((res) => {
+        if (res && res.items && res.items.length > 0) {
+          setRestaurants(res.items);
+        } else {
+          setRestaurants(MOCK_RESTAURANTS);
+        }
+      })
+      .catch(() => {
+        setRestaurants(MOCK_RESTAURANTS);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [search]);
+
+  const sortedRestaurants = [...restaurants].sort((a, b) => {
     if (sortBy === "rating") return b.rating_average - a.rating_average;
     if (sortBy === "distance") return (a.distance_km || 0) - (b.distance_km || 0);
     return a.name.localeCompare(b.name);
@@ -61,16 +82,20 @@ export const RestaurantListingPage: React.FC = () => {
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="py-20 flex justify-center">
+          <LoadingSpinner size="lg" text="Đang tải danh sách nhà hàng..." />
+        </div>
+      ) : sortedRestaurants.length === 0 ? (
         <EmptyState
-          title="Không tìm thấy nhà hàng"
-          description="Không có quán ăn nào khớp với từ khóa tìm kiếm của bạn. Hãy thử từ khóa khác!"
-          actionText="Xóa bộ lọc"
+          title="Không tìm thấy nhà hàng nào"
+          description="Hãy thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc."
+          actionLabel="Xóa tìm kiếm"
           onAction={() => setSearch("")}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filtered.map((restaurant) => (
+          {sortedRestaurants.map((restaurant) => (
             <RestaurantCard key={restaurant.id} restaurant={restaurant} />
           ))}
         </div>
@@ -78,4 +103,3 @@ export const RestaurantListingPage: React.FC = () => {
     </div>
   );
 };
-

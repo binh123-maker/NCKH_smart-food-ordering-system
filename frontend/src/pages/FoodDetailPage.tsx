@@ -1,38 +1,111 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Plus, Minus, ShoppingBag, Store, Clock, Heart, Sparkles, ChefHat } from "lucide-react";
+import { Plus, Minus, Store, Clock, Heart, Sparkles, ChefHat } from "lucide-react";
 import { MOCK_FOODS } from "../data/mockData";
 import { formatVND } from "../lib/utils";
 import { StarRating } from "../components/ui/StarRating";
-import { MacroBadge } from "../components/ui/MacroBadge";
 import { Button } from "../components/ui/Button";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { FoodCard } from "../components/common/FoodCard";
 import { useCartStore } from "../stores/cartStore";
+import { foodService } from "../services/foodService";
+import { reviewService } from "../services/reviewService";
+import { favoriteService } from "../services/favoriteService";
+import { recommendationService } from "../services/recommendationService";
+import { Food, FoodRecommendationItem } from "../types";
 
 export const FoodDetailPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const params = useParams();
+  const idOrSlug = params.id || params.slug || "food-1";
   const { addItem } = useCartStore();
 
-  const food = MOCK_FOODS.find((f) => f.slug === slug) || MOCK_FOODS[0];
+  const [food, setFood] = useState<Food | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
   const [activeTab, setActiveTab] = useState<"similar" | "reviews">("similar");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [similarFoods, setSimilarFoods] = useState<Food[]>([]);
 
-  // Similar foods (Content-based mock)
-  const similarFoods = MOCK_FOODS.filter((f) => f.id !== food.id).slice(0, 3);
+  useEffect(() => {
+    setIsLoading(true);
+    foodService
+      .getFoodById(idOrSlug)
+      .then((data) => {
+        if (data) {
+          setFood(data);
+          // Fetch similar foods
+          recommendationService
+            .getSimilarFoods(data.id, 3)
+            .then((sim) => {
+              if (sim && sim.items) {
+                // map to foods or fallback
+                const simIds = sim.items.map((i) => i.food_id);
+                const matched = MOCK_FOODS.filter((f) => simIds.includes(f.id));
+                setSimilarFoods(matched.length > 0 ? matched : MOCK_FOODS.slice(0, 3));
+              }
+            })
+            .catch(() => {
+              setSimilarFoods(MOCK_FOODS.slice(0, 3));
+            });
+
+          // Fetch reviews
+          reviewService
+            .getFoodReviews(data.id)
+            .then((res) => {
+              if (res && res.items) setReviews(res.items);
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {
+        // Fallback
+        const fallback =
+          MOCK_FOODS.find((f) => f.id === idOrSlug || f.slug === idOrSlug) || MOCK_FOODS[0];
+        setFood(fallback);
+        setSimilarFoods(MOCK_FOODS.filter((f) => f.id !== fallback.id).slice(0, 3));
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [idOrSlug]);
+
+  const handleToggleFavorite = async () => {
+    if (!food) return;
+    try {
+      const res = await favoriteService.toggleFavorite(food.id);
+      setIsFavorite(res.is_favorite);
+    } catch {
+      setIsFavorite(!isFavorite);
+    }
+  };
 
   const handleAddToCart = () => {
-    addItem(food, quantity, notes);
+    if (food) {
+      addItem(food, quantity, notes);
+    }
   };
+
+  if (isLoading || !food) {
+    return (
+      <div className="py-24 flex justify-center">
+        <LoadingSpinner size="lg" text="Đang tải thông tin món ăn..." />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 max-w-5xl py-8 space-y-12">
       {/* Top Breadcrumb */}
       <nav className="text-xs text-slate-400 flex items-center gap-2">
-        <Link to="/" className="hover:text-primary">Trang chủ</Link>
+        <Link to="/" className="hover:text-primary">
+          Trang chủ
+        </Link>
         <span>/</span>
-        <Link to="/foods" className="hover:text-primary">Thực đơn</Link>
+        <Link to="/foods" className="hover:text-primary">
+          Thực đơn
+        </Link>
         <span>/</span>
         <span className="text-slate-700 font-semibold truncate">{food.name}</span>
       </nav>
@@ -43,13 +116,16 @@ export const FoodDetailPage: React.FC = () => {
         <div className="md:col-span-6 space-y-3">
           <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-slate-100 shadow-md border border-slate-100 relative">
             <img
-              src={food.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80"}
+              src={
+                food.image_url ||
+                "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80"
+              }
               alt={food.name}
               className="w-full h-full object-cover"
             />
             <button
-              onClick={() => setIsFavorite(!isFavorite)}
-              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm"
+              onClick={handleToggleFavorite}
+              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm cursor-pointer"
             >
               <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
             </button>
@@ -78,16 +154,16 @@ export const FoodDetailPage: React.FC = () => {
             <div className="flex items-center gap-4 mt-2">
               <StarRating rating={food.rating_average} totalReviews={food.total_reviews} />
               <span className="text-xs text-slate-400">|</span>
-              <span className="text-xs text-slate-500">Đã bán: <strong>{food.order_count}</strong> phần</span>
+              <span className="text-xs text-slate-500">
+                Đã bán: <strong>{food.order_count}</strong> phần
+              </span>
             </div>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-black text-primary">
-              {formatVND(food.price)}
-            </span>
-            {food.original_price && (
+            <span className="text-3xl font-black text-primary">{formatVND(food.price)}</span>
+            {food.original_price && food.original_price > food.price && (
               <span className="text-sm text-slate-400 line-through">
                 {formatVND(food.original_price)}
               </span>
@@ -95,7 +171,8 @@ export const FoodDetailPage: React.FC = () => {
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed">
-            {food.description || "Món ăn được tuyển chọn nguyên liệu tươi ngon mỗi ngày, chế biến theo quy chuẩn an toàn vệ sinh thực phẩm."}
+            {food.description ||
+              "Món ăn được tuyển chọn nguyên liệu tươi ngon mỗi ngày, chế biến theo quy chuẩn an toàn vệ sinh thực phẩm."}
           </p>
 
           {/* NUTRITION FACTS WIDGET (Feature for RecSys / Healthy Food) */}
@@ -111,35 +188,29 @@ export const FoodDetailPage: React.FC = () => {
 
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs">
-                  <span className="text-sm font-extrabold text-orange-600 block">{food.nutrition.calories}</span>
+                  <span className="text-sm font-extrabold text-orange-600 block">
+                    {food.nutrition.calories}
+                  </span>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Calories</span>
                 </div>
                 <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs">
-                  <span className="text-sm font-extrabold text-emerald-600 block">{food.nutrition.protein}g</span>
+                  <span className="text-sm font-extrabold text-emerald-600 block">
+                    {food.nutrition.protein}g
+                  </span>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Protein</span>
                 </div>
                 <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs">
-                  <span className="text-sm font-extrabold text-amber-600 block">{food.nutrition.fat}g</span>
+                  <span className="text-sm font-extrabold text-amber-600 block">
+                    {food.nutrition.fat}g
+                  </span>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Chất béo</span>
                 </div>
                 <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs">
-                  <span className="text-sm font-extrabold text-sky-600 block">{food.nutrition.carbohydrates}g</span>
+                  <span className="text-sm font-extrabold text-sky-600 block">
+                    {food.nutrition.carbohydrates}g
+                  </span>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Carbs</span>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Ingredients */}
-          {food.ingredients && (
-            <div>
-              <span className="text-xs font-bold text-slate-700 block mb-2">Thành phần nguyên liệu chính:</span>
-              <div className="flex flex-wrap gap-1.5">
-                {food.ingredients.map((ing) => (
-                  <span key={ing} className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
-                    {ing}
-                  </span>
-                ))}
               </div>
             </div>
           )}
@@ -148,90 +219,94 @@ export const FoodDetailPage: React.FC = () => {
           <div className="space-y-3 pt-4 border-t border-slate-100">
             <input
               type="text"
+              placeholder="Ghi chú cho quán (VD: ít cay, không hành, sốt riêng...)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ghi chú món ăn (Ví dụ: Ít cay, không lấy hành...)"
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs outline-none focus:border-primary"
+              className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-primary placeholder:text-slate-400"
             />
 
-            <div className="flex items-center gap-4">
-              {/* Quantity selector */}
-              <div className="inline-flex items-center border border-slate-200 rounded-xl bg-white p-1">
+            <div className="flex items-center gap-3">
+              {/* Stepper */}
+              <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 p-1">
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="h-8 w-8 flex items-center justify-center text-slate-500 hover:text-primary transition-colors"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="h-8 w-8 rounded-lg hover:bg-white text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="px-4 text-sm font-bold text-slate-800 min-w-8 text-center">
+                <span className="w-10 text-center font-bold text-xs text-slate-800">
                   {quantity}
                 </span>
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="h-8 w-8 flex items-center justify-center text-slate-500 hover:text-primary transition-colors"
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="h-8 w-8 rounded-lg hover:bg-white text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
 
               {/* Add Button */}
-              <Button onClick={handleAddToCart} className="flex-1" size="lg">
-                <ShoppingBag className="h-5 w-5" />
-                <span>Thêm vào giỏ - {formatVND(food.price * quantity)}</span>
+              <Button onClick={handleAddToCart} size="lg" className="flex-1 shadow-md">
+                <span>Thêm vào giỏ hàng • {formatVND(food.price * quantity)}</span>
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs: Similar Foods & Reviews */}
-      <div className="pt-8 border-t border-slate-200">
-        <div className="flex gap-4 border-b border-slate-200 pb-3">
+      {/* Tabs: Similar Foods vs Reviews */}
+      <div className="space-y-6 pt-6 border-t border-slate-100">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
           <button
             onClick={() => setActiveTab("similar")}
-            className={`text-sm font-bold pb-2 transition-colors relative cursor-pointer ${
-              activeTab === "similar" ? "text-primary border-b-2 border-primary -mb-3" : "text-slate-400 hover:text-slate-600"
+            className={`text-sm font-bold pb-2 transition-colors cursor-pointer ${
+              activeTab === "similar"
+                ? "text-primary border-b-2 border-primary"
+                : "text-slate-400 hover:text-slate-600"
             }`}
           >
             Món ăn tương tự (Content-Based)
           </button>
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`text-sm font-bold pb-2 transition-colors relative cursor-pointer ${
-              activeTab === "reviews" ? "text-primary border-b-2 border-primary -mb-3" : "text-slate-400 hover:text-slate-600"
+            className={`text-sm font-bold pb-2 transition-colors cursor-pointer ${
+              activeTab === "reviews"
+                ? "text-primary border-b-2 border-primary"
+                : "text-slate-400 hover:text-slate-600"
             }`}
           >
-            Đánh giá từ khách hàng ({food.total_reviews})
+            Đánh giá từ khách hàng ({reviews.length})
           </button>
         </div>
 
-        <div className="pt-6">
-          {activeTab === "similar" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {similarFoods.map((simFood) => (
-                <FoodCard key={simFood.id} food={simFood} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4 max-w-2xl">
-              {[
-                { name: "Phạm Hải Đăng", rating: 5, date: "2 ngày trước", text: "Món ăn giao nhanh, ức gà mềm mọng không hề bị khô. Điểm dinh dưỡng rất rõ ràng!" },
-                { name: "Trần Mai Anh", rating: 5, date: "1 tuần trước", text: "Gạo lứt dẻo, sốt mè rang béo ngậy vừa miệng. Sẽ đặt lại thường xuyên." },
-              ].map((rev, idx) => (
-                <div key={idx} className="p-4 rounded-xl border border-slate-100 bg-white space-y-2">
+        {activeTab === "similar" && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {similarFoods.map((simFood) => (
+              <FoodCard key={simFood.id} food={simFood} />
+            ))}
+          </div>
+        )}
+
+        {activeTab === "reviews" && (
+          <div className="space-y-4">
+            {reviews.length === 0 ? (
+              <p className="text-xs text-slate-400 py-6 text-center">
+                Chưa có đánh giá nào cho món ăn này. Hãy là người đầu tiên thưởng thức và đánh giá!
+              </p>
+            ) : (
+              reviews.map((rev, i) => (
+                <div key={i} className="p-4 bg-slate-50 rounded-xl space-y-1 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-800">{rev.name}</span>
-                    <span className="text-[11px] text-slate-400">{rev.date}</span>
+                    <span className="font-bold text-slate-800">{rev.user_name || "Khách hàng"}</span>
+                    <span className="text-amber-500 font-bold">★ {rev.rating}</span>
                   </div>
-                  <StarRating rating={rev.rating} size="sm" />
-                  <p className="text-xs text-slate-600">{rev.text}</p>
+                  <p className="text-slate-600">{rev.comment}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
-

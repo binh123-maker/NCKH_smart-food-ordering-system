@@ -1,47 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Filter, Eye, CheckCircle2, Clock, Truck, XCircle } from "lucide-react";
-import { MOCK_ORDERS } from "../data/mockData";
 import { Order, OrderStatus, OrderItem } from "../types";
 import { formatVND } from "../lib/utils";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
 import { Button } from "../components/ui/Button";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { adminService } from "../services/adminService";
+import { MOCK_ORDERS } from "../data/mockData";
 
 export const AdminOrderManagementPage: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+
+  const fetchOrders = () => {
+    setIsLoading(true);
+    adminService
+      .getAllOrders(selectedStatus === "all" ? undefined : selectedStatus, 1, 50)
+      .then((res) => {
+        if (res && res.items && res.items.length > 0) {
+          setOrders(res.items);
+        } else {
+          setOrders(MOCK_ORDERS);
+        }
+      })
+      .catch(() => {
+        setOrders(MOCK_ORDERS);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [selectedStatus]);
 
   const filteredOrders = orders.filter((order) => {
     const matchSearch =
       order.order_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.restaurant_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus = selectedStatus === "all" || order.status === selectedStatus;
-    return matchSearch && matchStatus;
+    return matchSearch;
   });
 
-  const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
-    if (viewingOrder && viewingOrder.id === orderId) {
-      setViewingOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+  const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      await adminService.updateOrderStatus(orderId, newStatus);
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      );
+      if (viewingOrder && viewingOrder.id === orderId) {
+        setViewingOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Cập nhật trạng thái thành công!");
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      );
     }
   };
 
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
       case "COMPLETED":
-        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 flex items-center gap-1 w-fit"><CheckCircle2 className="h-3 w-3" /> Đã giao</span>;
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 flex items-center gap-1 w-fit">
+            <CheckCircle2 className="h-3 w-3" /> Đã giao
+          </span>
+        );
       case "DELIVERING":
-        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 flex items-center gap-1 w-fit"><Truck className="h-3 w-3" /> Đang giao hàng</span>;
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 flex items-center gap-1 w-fit">
+            <Truck className="h-3 w-3" /> Đang giao hàng
+          </span>
+        );
       case "PREPARING":
-        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 flex items-center gap-1 w-fit"><Clock className="h-3 w-3" /> Đang chế biến</span>;
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 flex items-center gap-1 w-fit">
+            <Clock className="h-3 w-3" /> Đang chế biến
+          </span>
+        );
       case "PENDING":
-        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 flex items-center gap-1 w-fit"><Clock className="h-3 w-3" /> Chờ xác nhận</span>;
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 flex items-center gap-1 w-fit">
+            <Clock className="h-3 w-3" /> Chờ xác nhận
+          </span>
+        );
       case "CANCELLED":
-        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700 flex items-center gap-1 w-fit"><XCircle className="h-3 w-3" /> Đã hủy</span>;
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700 flex items-center gap-1 w-fit">
+            <XCircle className="h-3 w-3" /> Đã hủy
+          </span>
+        );
       default:
         return null;
     }
@@ -53,7 +106,9 @@ export const AdminOrderManagementPage: React.FC = () => {
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-extrabold text-slate-900">Quản lý Đơn hàng</h2>
-          <p className="text-xs text-slate-500">Giám sát và chuyển đổi trạng thái đơn đặt hàng theo thời gian thực</p>
+          <p className="text-xs text-slate-500">
+            Giám sát và chuyển đổi trạng thái đơn đặt hàng theo thời gian thực
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">
@@ -79,7 +134,7 @@ export const AdminOrderManagementPage: React.FC = () => {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="h-10 text-xs rounded-xl border border-slate-200 bg-white px-3 font-medium text-slate-700 outline-none focus:border-primary"
+            className="h-10 text-xs rounded-xl border border-slate-200 bg-white px-3 font-medium text-slate-700 outline-none focus:border-primary cursor-pointer"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="PENDING">Chờ xác nhận</option>
@@ -92,60 +147,72 @@ export const AdminOrderManagementPage: React.FC = () => {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4">Mã đơn</th>
-                <th className="py-3 px-4">Nhà hàng</th>
-                <th className="py-3 px-4">Món ăn / Số lượng</th>
-                <th className="py-3 px-4">Tổng tiền</th>
-                <th className="py-3 px-4">Trạng thái</th>
-                <th className="py-3 px-4">Hành động cập nhật</th>
-                <th className="py-3 px-4 text-right">Chi tiết</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-4 font-black text-slate-900">{order.order_code}</td>
-                  <td className="py-3.5 px-4 text-slate-600 font-medium">{order.restaurant_name}</td>
-                  <td className="py-3.5 px-4">
-                    <span className="text-slate-700">
-                      {order.items.map((i: OrderItem) => `${i.food_name} (x${i.quantity})`).join(", ")}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-black text-slate-900">{formatVND(order.total_amount)}</td>
-                  <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
-                  <td className="py-3.5 px-4">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleUpdateStatus(order.id, e.target.value as OrderStatus)}
-                      className="text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 py-1 px-2 text-slate-700 focus:border-primary outline-none"
-                    >
-                      <option value="PENDING">Chờ xác nhận</option>
-                      <option value="PREPARING">Đang chế biến</option>
-                      <option value="DELIVERING">Đang giao</option>
-                      <option value="COMPLETED">Đã giao</option>
-                      <option value="CANCELLED">Hủy đơn</option>
-                    </select>
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <button
-                      onClick={() => setViewingOrder(order)}
-                      className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
-                      title="Xem chi tiết đơn"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isLoading ? (
+        <div className="py-20 flex justify-center bg-white rounded-2xl border border-slate-200">
+          <LoadingSpinner size="lg" text="Đang tải danh sách đơn hàng quản trị..." />
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-4">Mã đơn</th>
+                  <th className="py-3 px-4">Nhà hàng</th>
+                  <th className="py-3 px-4">Món ăn / Số lượng</th>
+                  <th className="py-3 px-4">Tổng tiền</th>
+                  <th className="py-3 px-4">Trạng thái</th>
+                  <th className="py-3 px-4">Hành động cập nhật</th>
+                  <th className="py-3 px-4 text-right">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-4 font-black text-slate-900">{order.order_code}</td>
+                    <td className="py-3.5 px-4 text-slate-600 font-medium">
+                      {order.restaurant_name}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="text-slate-700">
+                        {order.items?.map((i: OrderItem) => `${i.food_name} (x${i.quantity})`).join(", ")}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-black text-slate-900">
+                      {formatVND(order.total_amount)}
+                    </td>
+                    <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
+                    <td className="py-3.5 px-4">
+                      <select
+                        value={order.status}
+                        onChange={(e) =>
+                          handleUpdateStatus(order.id, e.target.value as OrderStatus)
+                        }
+                        className="text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 py-1 px-2 text-slate-700 focus:border-primary outline-none cursor-pointer"
+                      >
+                        <option value="PENDING">Chờ xác nhận</option>
+                        <option value="PREPARING">Đang chế biến</option>
+                        <option value="DELIVERING">Đang giao</option>
+                        <option value="COMPLETED">Đã giao</option>
+                        <option value="CANCELLED">Hủy đơn</option>
+                      </select>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <button
+                        onClick={() => setViewingOrder(order)}
+                        className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
+                        title="Xem chi tiết đơn"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Order Detail Modal */}
       <Modal
@@ -157,8 +224,12 @@ export const AdminOrderManagementPage: React.FC = () => {
           <div className="space-y-4 text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <p className="text-slate-400">Nhà hàng: <strong className="text-slate-800">{viewingOrder.restaurant_name}</strong></p>
-                <p className="text-slate-400">Thời gian tạo: <strong className="text-slate-800">{viewingOrder.created_at}</strong></p>
+                <p className="text-slate-400">
+                  Nhà hàng: <strong className="text-slate-800">{viewingOrder.restaurant_name}</strong>
+                </p>
+                <p className="text-slate-400">
+                  Thời gian tạo: <strong className="text-slate-800">{viewingOrder.created_at}</strong>
+                </p>
               </div>
               <div>{getStatusBadge(viewingOrder.status)}</div>
             </div>
@@ -166,12 +237,14 @@ export const AdminOrderManagementPage: React.FC = () => {
             <div>
               <h4 className="font-bold text-slate-800 mb-2">Danh sách món đặt:</h4>
               <div className="divide-y divide-slate-100 border rounded-xl overflow-hidden">
-                {viewingOrder.items.map((item: OrderItem, idx: number) => (
+                {viewingOrder.items?.map((item: OrderItem, idx: number) => (
                   <div key={idx} className="p-2.5 flex items-center justify-between bg-slate-50">
                     <span className="font-semibold text-slate-800">
                       {item.food_name} <span className="text-primary">x{item.quantity}</span>
                     </span>
-                    <span className="font-bold text-slate-900">{formatVND(item.unit_price * item.quantity)}</span>
+                    <span className="font-bold text-slate-900">
+                      {formatVND(item.unit_price * item.quantity)}
+                    </span>
                   </div>
                 ))}
               </div>

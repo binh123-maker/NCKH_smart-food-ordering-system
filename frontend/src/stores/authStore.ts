@@ -1,44 +1,64 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { User, UserPreference } from "../types";
+import { User } from "../types";
+import { authService } from "../services/authService";
 
 interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (user: User, token: string) => void;
+  isLoading: boolean;
+  login: (user: User, token: string, refreshToken?: string) => void;
   logout: () => void;
   updateUser: (updated: Partial<User>) => void;
+  fetchCurrentUser: () => Promise<void>;
   setOnboarded: (status: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
-      user: {
-        id: "usr-demo",
-        email: "nguyenvana@gmail.com",
-        full_name: "Nguyễn Văn A",
-        phone: "0901234567",
-        role: "CUSTOMER",
-        is_active: true,
-        is_onboarded: true,
-        avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
-      },
-      token: "mock-jwt-token-for-development",
-      isAuthenticated: true,
-      login: (user, token) => {
+    (set, get) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+
+      login: (user, token, refreshToken) => {
         localStorage.setItem("access_token", token);
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
         set({ user, token, isAuthenticated: true });
       },
+
       logout: () => {
-        localStorage.removeItem("access_token");
+        authService.logout();
         set({ user: null, token: null, isAuthenticated: false });
       },
+
       updateUser: (updated) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...updated } : null,
         })),
+
+      fetchCurrentUser: async () => {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          set({ user: null, token: null, isAuthenticated: false });
+          return;
+        }
+
+        try {
+          set({ isLoading: true });
+          const user = await authService.getMe();
+          set({ user, token, isAuthenticated: true, isLoading: false });
+        } catch (error) {
+          // Token expired or invalid
+          authService.logout();
+          set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        }
+      },
+
       setOnboarded: (status) =>
         set((state) => ({
           user: state.user ? { ...state.user, is_onboarded: status } : null,
@@ -46,7 +66,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "food_recsys_auth",
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );
-

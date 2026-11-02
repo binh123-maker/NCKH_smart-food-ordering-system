@@ -12,5 +12,17 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          'vendor-state': ['@tanstack/react-query', 'axios', 'zustand', 'zod'],
+        },
+      },
+    },
+  },
 });
 

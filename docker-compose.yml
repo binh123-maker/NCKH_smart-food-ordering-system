@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. PostgreSQL Database Service
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: foodrecsys-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-food_recsys}
+      POSTGRES_USER: ${POSTGRES_USER:-recsys_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_in_production}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-recsys_user} -d ${POSTGRES_DB:-food_recsys}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - foodrecsys-network
+
+  # ----------------------------------------------------------------------------
+  # 2. FastAPI Modular Backend & RecSys Engine
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: foodrecsys-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-recsys_user}:${POSTGRES_PASSWORD:-change_this_in_production}@postgres:5432/${POSTGRES_DB:-food_recsys}
+      SECRET_KEY: ${SECRET_KEY:-temporary_dev_secret_key_change_in_production}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-120}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      DEBUG: ${DEBUG:-false}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - foodrecsys-network
+
+  # ----------------------------------------------------------------------------
+  # 3. ReactJS Client & Nginx Static / Reverse Proxy
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: foodrecsys-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - foodrecsys-network
+
+# ------------------------------------------------------------------------------
+# Volumes & Networks Definition
+# ------------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  foodrecsys-network:
+    driver: bridge
+

@@ -39,11 +39,32 @@ export const FoodDetailPage: React.FC = () => {
           recommendationService
             .getSimilarFoods(data.id, 3)
             .then((sim) => {
-              if (sim && sim.items) {
-                // map to foods or fallback
-                const simIds = sim.items.map((i) => i.food_id);
-                const matched = MOCK_FOODS.filter((f) => simIds.includes(f.id));
-                setSimilarFoods(matched.length > 0 ? matched : MOCK_FOODS.slice(0, 3));
+              if (sim && sim.items && sim.items.length > 0) {
+                const mappedFoods: Food[] = sim.items.map((i: any) => ({
+                  id: i.food_id || i.id,
+                  name: i.name,
+                  slug: i.slug || "mon-an",
+                  price: i.price,
+                  image_url: i.image_url,
+                  rating_average: i.rating_average || 5.0,
+                  total_reviews: 25,
+                  order_count: 80,
+                  is_available: true,
+                  restaurant: {
+                    id: "rest-1",
+                    name: i.restaurant_name || "Nhà hàng",
+                    slug: "nha-hang",
+                  },
+                  nutrition: {
+                    calories: i.calories || 0,
+                    protein: i.protein || 0,
+                    fat: i.fat || 0,
+                    carbohydrates: i.carbohydrates || 0,
+                  },
+                }));
+                setSimilarFoods(mappedFoods);
+              } else {
+                setSimilarFoods(MOCK_FOODS.slice(0, 3));
               }
             })
             .catch(() => {

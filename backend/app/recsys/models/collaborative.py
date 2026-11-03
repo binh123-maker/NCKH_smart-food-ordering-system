@@ -3,9 +3,9 @@ import pandas as pd
 from typing import Optional, List, Tuple, Dict, Any
 from sklearn.decomposition import TruncatedSVD
 
-from backend.app.recsys.models.base import BaseRecommender
-from backend.app.recsys.pipelines.preprocessing import InteractionMatrixBuilder
-from backend.app.recsys.config import CF_SVD_COMPONENTS, CF_SVD_RANDOM_STATE
+from app.recsys.models.base import BaseRecommender
+from app.recsys.pipelines.preprocessing import InteractionMatrixBuilder
+from app.recsys.config import CF_SVD_COMPONENTS, CF_SVD_RANDOM_STATE
 
 class CollaborativeFilteringRecommender(BaseRecommender):
     """

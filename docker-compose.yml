@@ -39,7 +39,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-recsys_user}:${POSTGRES_PASSWORD:-change_this_in_production}@postgres:5432/${POSTGRES_DB:-food_recsys}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-recsys_user}:${POSTGRES_PASSWORD:-change_this_in_production}@postgres:5432/${POSTGRES_DB:-food_recsys}
       SECRET_KEY: ${SECRET_KEY:-temporary_dev_secret_key_change_in_production}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-120}

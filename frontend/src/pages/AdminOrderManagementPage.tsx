@@ -56,10 +56,11 @@ export const AdminOrderManagementPage: React.FC = () => {
         setViewingOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || "Cập nhật trạng thái thành công!");
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-      );
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error?.details ||
+        "Không thể cập nhật trạng thái đơn hàng. Vui lòng kiểm tra lại luồng trạng thái hợp lệ.";
+      alert(msg);
     }
   };
 

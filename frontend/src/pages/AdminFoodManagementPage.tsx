@@ -89,8 +89,8 @@ export const AdminFoodManagementPage: React.FC = () => {
       try {
         await adminService.deleteFood(id);
         setFoods((prev) => prev.filter((f) => f.id !== id));
-      } catch {
-        setFoods((prev) => prev.filter((f) => f.id !== id));
+      } catch (err: any) {
+        alert(err.response?.data?.message || "Không thể xóa món ăn do có liên kết đơn hàng hoặc đánh giá.");
       }
     }
   };

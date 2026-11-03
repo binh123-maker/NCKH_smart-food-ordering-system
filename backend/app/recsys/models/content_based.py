@@ -3,8 +3,8 @@ import pandas as pd
 from typing import Optional, List, Tuple, Dict, Any
 from sklearn.metrics.pairwise import cosine_similarity
 
-from backend.app.recsys.models.base import BaseRecommender
-from backend.app.recsys.pipelines.preprocessing import FoodFeaturePipeline
+from app.recsys.models.base import BaseRecommender
+from app.recsys.pipelines.preprocessing import FoodFeaturePipeline
 
 class ContentBasedRecommender(BaseRecommender):
     """

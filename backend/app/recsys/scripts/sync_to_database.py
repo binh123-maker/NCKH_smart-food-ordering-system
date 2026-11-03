@@ -18,7 +18,7 @@ from app.models.category import Category
 from app.models.restaurant import Restaurant
 from app.models.food import Food, FoodNutrition, FoodImage
 from app.models.recommendation import ModelVersion
-from backend.app.recsys.config import RAW_DATA_DIR, EVALUATION_DIR, CURRENT_MODEL_VERSION
+from app.recsys.config import RAW_DATA_DIR, EVALUATION_DIR, CURRENT_MODEL_VERSION
 
 def sync_database():
     print("Syncing Research Dataset and Model Version into Database...")

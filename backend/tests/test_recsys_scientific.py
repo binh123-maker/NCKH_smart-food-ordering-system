@@ -4,18 +4,18 @@ import pandas as pd
 from fastapi.testclient import TestClient
 
 from app.main import app
-from backend.app.recsys.pipelines.preprocessing import FoodFeaturePipeline
-from backend.app.recsys.models.content_based import ContentBasedRecommender
-from backend.app.recsys.models.collaborative import CollaborativeFilteringRecommender
-from backend.app.recsys.models.hybrid import HybridRecommender
-from backend.app.recsys.evaluation.metrics import (
+from app.recsys.pipelines.preprocessing import FoodFeaturePipeline
+from app.recsys.models.content_based import ContentBasedRecommender
+from app.recsys.models.collaborative import CollaborativeFilteringRecommender
+from app.recsys.models.hybrid import HybridRecommender
+from app.recsys.evaluation.metrics import (
     precision_at_k,
     recall_at_k,
     ndcg_at_k,
     average_precision_at_k,
     catalog_coverage
 )
-from backend.app.recsys.config import RAW_DATA_DIR, PROCESSED_DATA_DIR
+from app.recsys.config import RAW_DATA_DIR, PROCESSED_DATA_DIR
 
 @pytest.fixture(scope="module")
 def sample_data():

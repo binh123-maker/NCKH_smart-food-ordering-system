@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -25,12 +26,40 @@ from app.modules.interactions.router import router as interactions_router
 from app.modules.recommendations.router import router as recommendations_router
 from app.modules.admin.router import router as admin_router
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize DB tables and seed data if not present
+    try:
+        from app.core.database import engine
+        from app.models.base import Base
+        import app.models  # load all models
+        Base.metadata.create_all(bind=engine)
+
+        from app.scripts.seed_data import seed_database
+        seed_database()
+
+        try:
+            from app.core.database import SessionLocal
+            from app.models.food import Food
+            with SessionLocal() as db:
+                if db.query(Food).count() == 0:
+                    from app.recsys.scripts.sync_to_database import sync_database
+                    sync_database()
+        except Exception as seed_err:
+            print(f"Dataset sync notice: {seed_err}")
+    except Exception as e:
+        print(f"Startup database initialization error: {e}")
+    yield
+
+
 app = FastAPI(
     title="Food Ordering & Recommendation System API",
     description="Hệ thống Backend đặt đồ ăn trực tuyến tích hợp hệ thống gợi ý món ăn (Modular Monolith, Clean Architecture).",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS Configuration
@@ -74,4 +103,3 @@ app.include_router(admin_router, prefix=api_v1_prefix)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
-

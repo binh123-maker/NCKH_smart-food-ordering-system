@@ -64,39 +64,63 @@ export const AdminRestaurantPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Bạn có chắc muốn xóa nhà hàng này?")) {
-      setRestaurants((prev) => prev.filter((r) => r.id !== id));
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Bạn có chắc muốn xóa nhà hàng này khỏi hệ thống?")) {
+      try {
+        await restaurantService.deleteRestaurant(id);
+        setRestaurants((prev) => prev.filter((r) => r.id !== id));
+      } catch (err: any) {
+        alert(err.response?.data?.message || "Không thể xóa nhà hàng do đang có món ăn hoặc đơn hàng liên kết.");
+      }
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRes?.name) return;
 
-    if (editingRes.id) {
-      setRestaurants((prev) =>
-        prev.map((r) => (r.id === editingRes.id ? ({ ...r, ...editingRes } as Restaurant) : r))
-      );
-    } else {
-      const newRes: Restaurant = {
-        id: `rest-${Date.now()}`,
-        name: editingRes.name || "Nhà hàng mới",
-        slug: editingRes.name?.toLowerCase().replace(/\s+/g, "-") || "nha-hang-moi",
-        address: editingRes.address || "Hà Nội",
-        phone: editingRes.phone || "0987654321",
-        rating_average: 5.0,
-        total_reviews: 0,
-        image_url:
-          editingRes.image_url ||
-          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80",
-        is_active: true,
-        opening_hours: editingRes.opening_hours || "07:00 - 22:00",
-        distance_km: 2.5,
-      };
-      setRestaurants((prev) => [newRes, ...prev]);
+    try {
+      if (editingRes.id && !editingRes.id.startsWith("rest-")) {
+        const updated = await restaurantService.updateRestaurant(editingRes.id, {
+          name: editingRes.name,
+          address: editingRes.address,
+          phone: editingRes.phone,
+          opening_hours: editingRes.opening_hours || "07:00 - 22:00",
+          is_active: editingRes.is_active,
+        });
+        setRestaurants((prev) =>
+          prev.map((r) => (r.id === editingRes.id ? ({ ...r, ...updated, ...editingRes } as Restaurant) : r))
+        );
+      } else {
+        const payload = {
+          name: editingRes.name,
+          address: editingRes.address || "Hà Nội",
+          phone: editingRes.phone || "0987654321",
+          opening_hours: editingRes.opening_hours || "07:00 - 22:00",
+          is_active: true,
+        };
+        const created = await restaurantService.createRestaurant(payload);
+        const newRes: Restaurant = {
+          id: created.id,
+          name: created.name || editingRes.name,
+          slug: created.slug || "nha-hang",
+          address: editingRes.address || "Hà Nội",
+          phone: editingRes.phone || "0987654321",
+          rating_average: 5.0,
+          total_reviews: 0,
+          image_url:
+            editingRes.image_url ||
+            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80",
+          is_active: true,
+          opening_hours: editingRes.opening_hours || "07:00 - 22:00",
+          distance_km: 2.5,
+        };
+        setRestaurants((prev) => [newRes, ...prev]);
+      }
+      setIsModalOpen(false);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Có lỗi xảy ra khi lưu thông tin nhà hàng.");
     }
-    setIsModalOpen(false);
   };
 
   return (

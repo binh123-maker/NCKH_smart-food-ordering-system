@@ -1,5 +1,6 @@
 import os
 import sys
+import types
 import uuid
 import joblib
 import pandas as pd
@@ -7,11 +8,19 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 
+# Unpickling compatibility: ensure 'backend.app' resolves if serialized under that name
+if "backend" not in sys.modules:
+    import app
+    backend_module = types.ModuleType("backend")
+    backend_module.app = app
+    sys.modules["backend"] = backend_module
+    sys.modules["backend.app"] = app
+
 from app.models.user import User
 from app.models.food import Food
 from app.models.recommendation import RecommendationLog, RecommendationFeedback, ModelVersion
 from app.modules.recommendations.schemas import RecommendedFoodItem, RecommendationFeedbackRequest
-from backend.app.recsys.config import SERIALIZED_DIR, RAW_DATA_DIR, CURRENT_MODEL_VERSION
+from app.recsys.config import SERIALIZED_DIR, RAW_DATA_DIR, CURRENT_MODEL_VERSION
 
 # Lazy loaded singleton model cache
 _MODEL_CACHE: Dict[str, Any] = {}

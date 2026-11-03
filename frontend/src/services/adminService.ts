@@ -50,5 +50,18 @@ export const adminService = {
   async deleteFood(foodId: string): Promise<void> {
     await apiClient.delete(`/foods/${foodId}`);
   },
+
+  async getUsers(role?: string, page = 1, limit = 20) {
+    const res = await apiClient.get("/admin/users", { params: { role, page, limit } });
+    return {
+      items: res.data.data || [],
+      total: res.data.meta?.total || (res.data.data || []).length,
+    };
+  },
+
+  async toggleUserStatus(userId: string) {
+    const res = await apiClient.put(`/admin/users/${userId}/toggle-status`);
+    return res.data.data;
+  },
 };
 

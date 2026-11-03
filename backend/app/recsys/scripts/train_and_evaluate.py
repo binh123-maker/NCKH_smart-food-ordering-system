@@ -13,18 +13,18 @@ BACKEND_ROOT = FILE_PATH.parents[3] # D:\NCKH\backend
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from backend.app.recsys.config import (
+from app.recsys.config import (
     RAW_DATA_DIR,
     PROCESSED_DATA_DIR,
     SERIALIZED_DIR,
     EVALUATION_DIR,
     CURRENT_MODEL_VERSION,
 )
-from backend.app.recsys.pipelines.split import train_test_split_by_user
-from backend.app.recsys.models.content_based import ContentBasedRecommender
-from backend.app.recsys.models.collaborative import CollaborativeFilteringRecommender
-from backend.app.recsys.models.hybrid import HybridRecommender
-from backend.app.recsys.evaluation.evaluator import PopularityBaselineRecommender, RecSysBenchmark
+from app.recsys.pipelines.split import train_test_split_by_user
+from app.recsys.models.content_based import ContentBasedRecommender
+from app.recsys.models.collaborative import CollaborativeFilteringRecommender
+from app.recsys.models.hybrid import HybridRecommender
+from app.recsys.evaluation.evaluator import PopularityBaselineRecommender, RecSysBenchmark
 
 def run_experiment():
     print("=" * 70)

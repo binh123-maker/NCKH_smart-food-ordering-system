@@ -1,6 +1,6 @@
 {
   "model_version": "v2.0.0-scientific-hybrid",
-  "trained_at": "2026-11-02 21:13:18",
+  "trained_at": "2026-11-02 22:41:46",
   "n_foods": 60,
   "n_users": 120,
   "feature_dim": 110,

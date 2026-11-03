@@ -3,10 +3,10 @@ import pandas as pd
 from typing import Optional, List, Tuple, Dict, Any
 from sklearn.metrics.pairwise import cosine_similarity
 
-from backend.app.recsys.models.base import BaseRecommender
-from backend.app.recsys.models.content_based import ContentBasedRecommender
-from backend.app.recsys.models.collaborative import CollaborativeFilteringRecommender
-from backend.app.recsys.config import (
+from app.recsys.models.base import BaseRecommender
+from app.recsys.models.content_based import ContentBasedRecommender
+from app.recsys.models.collaborative import CollaborativeFilteringRecommender
+from app.recsys.config import (
     HYBRID_CBF_WEIGHT,
     HYBRID_CF_WEIGHT,
     COLD_START_INTERACTION_THRESHOLD,

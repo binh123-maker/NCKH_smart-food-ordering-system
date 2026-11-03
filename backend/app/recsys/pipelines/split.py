@@ -40,7 +40,7 @@ def train_test_split_by_user(
     return train_df, test_df
 
 if __name__ == "__main__":
-    from backend.app.recsys.config import RAW_DATA_DIR, PROCESSED_DATA_DIR
+    from app.recsys.config import RAW_DATA_DIR, PROCESSED_DATA_DIR
     PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
     
     df = pd.read_csv(RAW_DATA_DIR / "interactions.csv")

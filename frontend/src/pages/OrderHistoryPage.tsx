@@ -88,9 +88,9 @@ export const OrderHistoryPage: React.FC = () => {
       setReviewOrder(null);
       setComment("");
     } catch (err: any) {
-      alert(err.response?.data?.message || "Đã lưu đánh giá của bạn!");
-      setReviewOrder(null);
+      alert(err.response?.data?.message || "Không thể gửi đánh giá. Vui lòng thử lại sau.");
     } finally {
+      setReviewOrder(null);
       setIsSubmittingReview(false);
     }
   };

@@ -8,7 +8,7 @@ from app.core.response import success_response
 from app.models.user import User
 from app.modules.recommendations.schemas import RecommendationFeedbackRequest
 from app.modules.recommendations.services import RecommendationService
-from backend.app.recsys.config import CURRENT_MODEL_VERSION
+from app.recsys.config import CURRENT_MODEL_VERSION
 
 router = APIRouter(prefix="/recommendations", tags=["Recommendation Engine"])
 

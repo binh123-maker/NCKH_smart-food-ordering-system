@@ -51,7 +51,10 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       const message =
         err.response?.data?.message ||
-        err.response?.data?.error?.details ||
+        err.response?.data?.error?.message ||
+        (typeof err.response?.data?.error?.details === "string"
+          ? err.response?.data?.error?.details
+          : null) ||
         "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.";
       setErrorMsg(message);
     }
@@ -135,8 +138,9 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setValue("email", "customer@example.com");
-                  setValue("password", "Customer@123456");
+                  setValue("email", "customer@example.com", { shouldValidate: true, shouldDirty: true });
+                  setValue("password", "Customer@123456", { shouldValidate: true, shouldDirty: true });
+                  setErrorMsg(null);
                 }}
                 className="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold text-center transition-colors"
               >
@@ -145,8 +149,9 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setValue("email", "admin@foodrecsys.com");
-                  setValue("password", "Admin@123456");
+                  setValue("email", "admin@foodrecsys.com", { shouldValidate: true, shouldDirty: true });
+                  setValue("password", "Admin@123456", { shouldValidate: true, shouldDirty: true });
+                  setErrorMsg(null);
                 }}
                 className="py-1.5 px-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-800 text-[11px] font-semibold text-center transition-colors"
               >

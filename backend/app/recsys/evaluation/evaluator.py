@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Dict, List, Any
 from pathlib import Path
 
-from backend.app.recsys.evaluation.metrics import (
+from app.recsys.evaluation.metrics import (
     precision_at_k,
     recall_at_k,
     f1_score_at_k,
@@ -12,8 +12,8 @@ from backend.app.recsys.evaluation.metrics import (
     average_precision_at_k,
     catalog_coverage
 )
-from backend.app.recsys.models.base import BaseRecommender
-from backend.app.recsys.config import EVAL_K_LIST, RELEVANCE_THRESHOLD, EVALUATION_DIR
+from app.recsys.models.base import BaseRecommender
+from app.recsys.config import EVAL_K_LIST, RELEVANCE_THRESHOLD, EVALUATION_DIR
 
 class PopularityBaselineRecommender(BaseRecommender):
     """
